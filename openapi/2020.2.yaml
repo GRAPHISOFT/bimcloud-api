@@ -1,16 +1,16 @@
 openapi: 3.0.0
 servers:
 # Added by API Auto Mocking Plugin
-  - description: BIMcloud DEMO
+  - description: BIMcloud Manager
     url: https://bimcloud.graphisoft.com
   - description: BIMcoud Blob server
     url: https://blobserver.graphisoft.com
 info:
   description: |
-    Open BIMcloud API for file management.
+    BIMcloud API specifiaction.
     See the provided example for detailed information.
   version: "1.0.0"
-  title: Open BIMcloud API 2020.2 (alpha release)
+  title: BIMcloud API 2020.2 (alpha release)
 tags:
   - name: PortalServer
     description: |
@@ -115,7 +115,7 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/GetTicketRequest'
-      responses:      
+      responses:
         200:
           description: |
             Successful ticket request. When input parameter `format` is `base64`, the resonse content type will be
@@ -240,7 +240,7 @@ paths:
                   type: string
                   example: folder2
                   description: The name of the resource group to be created
-                type: 
+                type:
                   type: string
                   pattern: resourceGroup
                   example: resourceGroup
@@ -336,7 +336,7 @@ paths:
                 $ref: '#/components/schemas/PortalServerError'
         503:
           description: 'Server unavailable, retry the request later.'
-  
+
   /management/client/get-inherited-default-blob-server-id:
     get:
       tags:
@@ -376,7 +376,7 @@ paths:
           description: 'Server unavailable, retry the request later.'
 
   # BLOB SERVER SESSION APIS
-  
+
   /session-service/1.0/create-session:
     post:
       tags:
@@ -432,7 +432,7 @@ paths:
       parameters:
         - in: query
           name: session-id
-          schema: 
+          schema:
             type: string
           example: 5cf6ee792cdf05e1ba2b6325c41a5f10
           description: The ID of the session
@@ -455,7 +455,7 @@ paths:
             application/vnd.graphisoft.teamwork.generic-service-1.0.detailed-error-1.0+json:
               schema:
                 $ref: '#/components/schemas/BlobServerDetailedError'
-  
+
   /session-service/1.0/close-session:
     post:
       tags:
@@ -465,7 +465,7 @@ paths:
       parameters:
         - in: query
           name: session-id
-          schema: 
+          schema:
             type: string
           example: 5cf6ee792cdf05e1ba2b6325c41a5f10
           description: the ID of the session to close
@@ -478,9 +478,9 @@ paths:
             application/vnd.graphisoft.teamwork.generic-service-1.0.detailed-error-1.0+json:
               schema:
                 $ref: '#/components/schemas/BlobServerDetailedError'
-  
+
   # BLOB STORE BLOB SERVER UPLOAD APIS
-  
+
   /blob-store-service/1.0/begin-batch-upload:
     post:
       tags:
@@ -490,21 +490,21 @@ paths:
       parameters:
         - in: query
           name: session-id
-          schema: 
+          schema:
             type: string
           example: 5cf6ee792cdf05e1ba2b6325c41a5f10
           description: The ID of the blob server session returned by /session-service/1.0/create-session
 
         - in: query
           name: description
-          schema: 
+          schema:
             type: string
           example: This is the description of the batch upload session.
           description: The description of the batch being uploaded. Any URL encoded text.
       responses:
         200:
           description: Batch upload session successfully created.
-          content: 
+          content:
             application/vnd.graphisoft.teamwork.blob-store-service-1.0.batch-upload-session-1.0+json:
               schema:
                 type: object
@@ -530,20 +530,20 @@ paths:
       parameters:
         - in: query
           name: session-id
-          schema: 
+          schema:
             type: string
           example: 5cf6ee792cdf05e1ba2b6325c41a5f10
           description: The ID of the blob server session returned by /session-service/1.0/create-session
         - in: query
           name: blob-name
-          schema: 
+          schema:
             type: string
             format: path
           example: /folder/file.png
           description: The full path of the file to be uploaded
         - in: query
           name: namespace-name
-          schema: 
+          schema:
             type: string
             format: uuid
           example: 832DBA54-7E0B-463C-B0EF-DB65DAB25745
@@ -551,7 +551,7 @@ paths:
       responses:
         200:
           description: Upload session successfully created.
-          content: 
+          content:
             application/vnd.graphisoft.teamwork.blob-store-service-1.0.upload-session-1.0+json:
               schema:
                 type: object
@@ -577,14 +577,14 @@ paths:
       parameters:
         - in: query
           name: session-id
-          schema: 
+          schema:
             type: string
           example: 5cf6ee792cdf05e1ba2b6325c41a5f10
           description: The ID of the blob server session returned by /session-service/1.0/create-session
 
         - in: query
           name: upload-session-id
-          schema: 
+          schema:
             type: string
             format: uuid
           example: 6894B3DD-74FE-48AE-BD5E-266861659B13
@@ -592,14 +592,14 @@ paths:
 
         - in: query
           name: offset
-          schema: 
+          schema:
             type: integer
           example: "0"
           description: The offset of the chunk being uploaded from the beginning of the blob in bytes
 
         - in: query
           name: length
-          schema: 
+          schema:
             type: integer
           example: 484173
           description: The size of the chunk being uploaded.
@@ -614,7 +614,7 @@ paths:
       responses:
         200:
           description: Chunk successfully uploaded.
-          content: 
+          content:
             application/vnd.graphisoft.teamwork.blob-store-service-1.0.upload-session-1.0+json:
               schema:
                 type: object
@@ -637,20 +637,20 @@ paths:
         - BlobServer
       description: |
         Commits a single blob upload session.
-        
+
         **IMPORTANT** The blob-id in the response to this request will be a temporary ID.
 
         The final ID will get assigned when /blob-store-service/1.0/commit-batch-upload is called by the client!
       parameters:
         - in: query
           name: session-id
-          schema: 
+          schema:
             type: string
           example: 5cf6ee792cdf05e1ba2b6325c41a5f10
           description: The ID of the blob server session returned by /session-service/1.0/create-session
         - in: query
           name: upload-session-id
-          schema: 
+          schema:
             type: string
             format: uuid
           example: 6894B3DD-74FE-48AE-BD5E-266861659B13
@@ -658,7 +658,7 @@ paths:
       responses:
         200:
           description: Upload session successfully committed.
-          content: 
+          content:
             application/vnd.graphisoft.teamwork.blob-store-service-1.0.blob-metadata-1.0+json:
               schema:
                 type: object
@@ -680,26 +680,26 @@ paths:
       tags:
         - BlobServer
       description: |
-        Commits a batch upload session. 
-        
+        Commits a batch upload session.
+
         **IMPORTANT** The final IDs of the blobs uploaded in this session will be available in the response body of this request.
       parameters:
         - in: query
           name: session-id
-          schema: 
+          schema:
             type: string
           example: 5cf6ee792cdf05e1ba2b6325c41a5f10
           description: The ID of the blob server session returned by /session-service/1.0/create-session
         - in: query
           name: batch-upload-session-id
-          schema: 
+          schema:
             type: string
             format: uuid
           example: 832DBA54-7E0B-463C-B0EF-DB65DAB25745
           description: The ID of the batch-upload-session to be committed
         - in: query
           name: conflict-behavior
-          schema: 
+          schema:
             type: string
             pattern: overwrite|fail
           example: overwrite
@@ -711,19 +711,19 @@ paths:
       responses:
         200:
           description: Batch upload session successfully committed.
-          content: 
+          content:
             application/vnd.graphisoft.teamwork.blob-store-service-1.0.blob-metadata-1.0-list+json:
               schema:
                 type: object
-                properties: 
-                  data-content-type: 
+                properties:
+                  data-content-type:
                     type: string
                     example: application/vnd.graphisoft.teamwork.blob-store-service-1.0.blob-metadata-1.0-list+json
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/BlobServerBlobMetadataResponse'
-               
+
         430:
           description: Batch upload session could not be committed.
           content:
@@ -740,27 +740,27 @@ paths:
       parameters:
         - in: query
           name: session-id
-          schema: 
+          schema:
             type: string
           example: 5cf6ee792cdf05e1ba2b6325c41a5f10
           description: The ID of the blob server session returned by /session-service/1.0/create-session
         - in: query
           name: blob-id
-          schema: 
+          schema:
             type: string
             format: uuid
           example: 4D7C7BB1-7AEF-4CD2-9146-0286561D6F85
           description: The final (Portal Server side) ID of the blob to download
         - in: query
           name: filename
-          schema: 
+          schema:
             type: string
           example: file.png
           description: The desired filename of the data to be downloaded.
       responses:
         200:
           description: File data downloading.
-          content: 
+          content:
             application/octet-stream:
               schema:
                 type: string
@@ -894,7 +894,7 @@ components:
           type: integer
           example: 484173
           description: The size of the requested resource in bytes.
-    
+
     CriterionObject:
       type: object
       description: |
@@ -937,7 +937,7 @@ components:
             `/management/client/get-inherited-default-blob-server-id`, where the `resource-group-id` parameter is
             the ID of the future target upload's parent directory.
           type: array
-          items: 
+          items:
             type: string
             format: uuid
           maxLength: 1
@@ -955,7 +955,7 @@ components:
       format: binary
       example: <binary data>
       description: Binary ticket data.
-    
+
     BlobServerAuthenticationRequest:
       type: object
       properties:
@@ -1152,7 +1152,7 @@ components:
               type: string
               example: ""
               description: Language of file contents
-            content-type: 
+            content-type:
               type: string
               example: application/octet-stream
               description: Content type of this file
@@ -1181,14 +1181,14 @@ components:
           description: Reserved for future use.
 
     # FS ERRORS
-    
+
     BlobServerDetailedError:
       type: object
       properties:
         data-content-type:
           type: string
           example: application/vnd.graphisoft.teamwork.generic-service-1.0.detailed-error-1.0+json
-        data: 
+        data:
           type: object
           properties:
             error-message:
@@ -1222,7 +1222,7 @@ components:
             details:
               type: object
               properties:
-                message: 
+                message:
                   type: string
                   example: "Authentication failed: access control ticket is expired."
                   description: The error message generated by the Blob Server

@@ -1,12 +1,20 @@
 # About
 
+This repository hosts BIMcloud API specification and and example application in Python. Please note this is an alpha version and subject of change in the near future.
+
+# Specification
+
+Please refer to **openapi/2020.2.yaml** specification. It's in a standard OpenAPI 3.0 (Swagger) format, that can be viewed by using any compatible viewer (VS Code for example, or paste the Github raw url to [the online Swagger viewer](https://petstore.swagger.io/)).
+
+# Demo
+
 Demo is about a simple worklfow that tries to get over all operations required to upload, download and delete a file to an arbitrary path of a BIMcloud server.
 
 Please refer to **lib/workflow.py** source code and its comments for detailed information.
 
 *Notice: since authentication APIs send passwords in clear text, it is advised to configure BIMcloud to get accessible by using https endpoints from the Internet.*
 
-# Installation
+## Installation
 
 The demo console application requires Python 3.7+ with installed [requests](https://2.python-requests.org/) library to run.
 
@@ -20,7 +28,7 @@ Eg.:
 pip install requests
 ```
 
-# Run
+## Run
 
 The demo is a basic commandline application. Entering:
 
