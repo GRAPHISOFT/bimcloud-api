@@ -4,13 +4,13 @@ This repository hosts BIMcloud API specification and and example application in 
 
 # Specification
 
-Please refer to **openapi/2020.2.yaml** specification. It's in a standard OpenAPI 3.0 (Swagger) format, that can be viewed by using any compatible viewer (VS Code for example, or paste the Github raw url to [the online Swagger viewer](https://petstore.swagger.io/)).
+Please refer to [openapi/2020.2.yaml](https://github.com/GRAPHISOFT/bimcloud-api/blob/master/openapi/2020.2.yaml) specification. It's in a standard OpenAPI 3.0 (Swagger) format, that can be viewed by using any compatible viewer (VS Code for example, or paste the Github raw url to [the online Swagger viewer](https://petstore.swagger.io/)).
 
 # Demo
 
 Demo is about a simple worklfow that tries to get over all operations required to upload, download and delete a file to an arbitrary path of a BIMcloud server.
 
-Please refer to **lib/workflow.py** source code and its comments for detailed information.
+Please refer to [lib/workflow.py](https://github.com/GRAPHISOFT/bimcloud-api/blob/master/lib/workflow.py) source code and its comments for detailed information.
 
 *Notice: since authentication APIs send passwords in clear text, it is advised to configure BIMcloud to get accessible by using https endpoints from the Internet.*
 
