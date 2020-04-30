@@ -1,6 +1,6 @@
 # About
 
-Demo is about a simple worklfow that tries to get over all operations required to upload, download and delete a file to an arbitrary path.
+Demo is about a simple worklfow that tries to get over all operations required to upload, download and delete a file to an arbitrary path of a BIMcloud server.
 
 Please refer to **lib/workflow.py** source code and its comments for detailed information.
 
