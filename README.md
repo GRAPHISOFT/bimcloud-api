@@ -57,5 +57,5 @@ optional arguments:
 That should be obvious. Enter this for example to get the demo rolling:
 
 ```bash
-python ./demo.py -m=http://localhost:22000 -u=masteradmin -p=123 -clientid=graphisoft.com
+python ./demo.py -m=<manager-url> -u=<username> -p=<password> -clientid=<your-domain>
 ```
