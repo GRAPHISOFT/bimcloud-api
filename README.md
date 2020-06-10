@@ -8,7 +8,7 @@ Please refer to [openapi/2020.2.yaml](https://github.com/GRAPHISOFT/bimcloud-api
 
 # Demo
 
-Demo is about a simple worklfow that tries to get over all operations required to upload, download and delete a file to an arbitrary path of a BIMcloud server.
+Demo application (demo.py) is about a simple workflow that tries to get over all operations required to upload, download and delete a file to an arbitrary path of a BIMcloud server.
 
 Please refer to [lib/workflow.py](https://github.com/GRAPHISOFT/bimcloud-api/blob/master/lib/workflow.py) source code and its comments for detailed information.
 
