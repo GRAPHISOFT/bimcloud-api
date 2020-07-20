@@ -1,6 +1,6 @@
 # About
 
-This repository hosts BIMcloud API specification, a small library and an example application in Python. Please note this is an alpha version and subject of change in the near future.
+This repository hosts BIMcloud API specification, a small library and an example application in Python. Please note this is the first released version and subject of change shortly.
 
 # Specification
 
