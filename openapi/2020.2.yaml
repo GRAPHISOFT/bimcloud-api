@@ -787,7 +787,7 @@ components:
         username:
           type: string
           example: some-user
-          description: Username of the user initiating the request
+          description: Username of the user initiating the request. NOTE: this is case sensitive.
         password:
           description: |
             **IMPORTANT** The password is in cleartext, so it is **IMPERATIVE** that the API gets published via https
