@@ -174,7 +174,7 @@ paths:
           description: 'Server unavailable, retry the request later.'
 
   /management/client/get-resources-by-criterion:
-    get:
+    post:
       tags:
         - PortalServer
       description: |
@@ -787,7 +787,7 @@ components:
         username:
           type: string
           example: some-user
-          description: Username of the user initiating the request. NOTE: this is case sensitive.
+          description: "Username of the user initiating the request. NOTE: this is case sensitive."
         password:
           description: |
             **IMPORTANT** The password is in cleartext, so it is **IMPERATIVE** that the API gets published via https
@@ -1027,6 +1027,8 @@ components:
           description: Timestamp of when this session was created in milliseconds.
         events:
           type: array
+          items: 
+            type: string
           example: []
           description: Names of the events that occured during the session.
 
