@@ -48,18 +48,18 @@ class ManagerApi:
 				return None
 			raise err
 
-	def get_resource_by_id(self, session_id, id):
-		if id is None:
-			ValueError('"id"" expected.')
+	def get_resource_by_id(self, session_id, resource_id):
+		if resource_id is None:
+			raise ValueError('"resource_id"" expected.')
 
 		url = join_url(self._api_root, 'get-resource')
-		response = requests.get(url, params={ 'session-id': session_id, 'resource-id': id })
+		response = requests.get(url, params={ 'session-id': session_id, 'resource-id': resource_id })
 		result = self.process_response(response)
 		return result
 
 	def get_resources_by_criterion(self, session_id, criterion, options=None):
 		if criterion is None:
-			ValueError('"criterion"" expected.')
+			raise ValueError('"criterion"" expected.')
 
 		url = join_url(self._api_root, 'get-resources-by-criterion')
 		params = { 'session-id': session_id }
@@ -96,6 +96,23 @@ class ManagerApi:
 		url = join_url(self._api_root, 'delete-blob')
 		response = requests.delete(url, params={ 'session-id': session_id, 'resource-id': blob_id })
 		self.process_response(response)
+
+	def update_blob(self, session_id, blob):
+		url = join_url(self._api_root, 'update-blob')
+		response = requests.put(url, params={ 'session-id': session_id }, json=blob)
+		self.process_response(response)
+
+	def get_blob_changes_for_sync(self, session_id, path, resource_group_id, from_revision):
+		url = join_url(self._api_root, 'get-blob-changes-for-sync')
+		request = {
+ 			'path': path,
+			'resourceGroupId': resource_group_id,
+			'fromRevision': from_revision
+		}
+		response = requests.post(url, params={ 'session-id': session_id }, json=request)
+		result = self.process_response(response)
+		assert isinstance(result, object), 'Result is not an object.'
+		return result
 
 	def get_inherited_default_blob_server_id(self, session_id, resource_group_id):
 		url = join_url(self._api_root, 'get-inherited-default-blob-server-id')

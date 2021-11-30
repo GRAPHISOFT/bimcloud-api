@@ -29,6 +29,7 @@ class Workflow:
 		self._inner_dir_path = None
 		self._model_server_urls = {}
 		self._blob_server_sessions = {}
+		self._revision_for_blob_sync = None
 
 	def run(self):
 		# WORKFLOW BEGIN
@@ -36,6 +37,7 @@ class Workflow:
 		try:
 			self.create_dirs()
 			self.upload_files()
+			self.update_files()
 			self.locate_download_and_delete_files()
 		finally:
 			self.logout()
@@ -43,7 +45,7 @@ class Workflow:
 
 	def login(self):
 		print(f'Login as {self.username} ...')
-		self._userId, self._session_id = self._manager_api.create_session(self.username, self._password, self.client_id)
+		self._user_id, self._session_id = self._manager_api.create_session(self.username, self._password, self.client_id)
 		print('Logged in.')
 
 	def create_dirs(self):
@@ -67,6 +69,8 @@ class Workflow:
 		# required directories will get createad.
 		self._inner_dir_path = join_url(self._sub_dir_data['$path'], self.to_unique('foo'), self.to_unique('bar'))
 		self.upload_file(self._inner_dir_path, 'pic2.jpg')
+
+		self.print_blob_changes(self._sub_dir_data['$path'])
 
 		print('\nFiles uploaded.')
 
@@ -127,6 +131,21 @@ class Workflow:
 
 		self.run_with_blob_server_session(model_server, do_upload)
 
+	def update_files(self):
+		print('Renaming files ...')
+
+		text1_blob_path = join_url(self._sub_dir_data['$path'], 'text1.txt')
+		text1_blob = self._manager_api.get_resource(self._session_id, text1_blob_path)
+
+		update_body = {
+			'id': text1_blob['id'],
+			'name': 'text1_rename.txt'
+		}
+
+		self._manager_api.update_blob(self._session_id, update_body)
+
+		self.print_blob_changes(self._sub_dir_data['$path'])
+
 	def locate_download_and_delete_files(self):
 		self.locate_download_and_delete_files_in(self._root_dir_data)
 
@@ -158,7 +177,7 @@ class Workflow:
 			options['skip'] += limit
 
 		if not all_content:
-			print(f'Directory has not content.')
+			print('Directory has not content.')
 			return
 
 		print(f'Directory has {len(all_content)} resouurces.')
@@ -170,6 +189,8 @@ class Workflow:
 		# Type of file is 'blob' in BIMcloud.
 		for blob in filter(lambda i: i['type'] == 'blob', all_content):
 			self.download_and_delete_file(blob)
+
+		self.print_blob_changes(directory_path)
 
 		# We do this at last, because non-empty directories cannot get deleted (easily).
 		self._manager_api.delete_resource_group(self._session_id, directory_id)
@@ -297,6 +318,21 @@ class Workflow:
 		self._session_id = None
 		self._model_server_urls = {}
 
+	def print_blob_changes(self, path):
+		if self._revision_for_blob_sync is None:
+			self._revision_for_blob_sync = 0
+		else:
+			self._revision_for_blob_sync = self._revision_for_blob_sync + 1
+
+		print('Getting changes for sync...')
+		blob_changes = self._manager_api.get_blob_changes_for_sync(self._session_id, path, None, self._revision_for_blob_sync)
+		created_blob_changes = Workflow.concat_with_separator(blob_changes['created'], ', ', 'name')
+		print(f'Created blob names from revision {self._revision_for_blob_sync}: {created_blob_changes}')
+		updated_blob_changes = Workflow.concat_with_separator(blob_changes['updated'], ', ', 'name')
+		print(f'Updated blob names from revision {self._revision_for_blob_sync}: {updated_blob_changes}')
+		deleted_blob_changes = Workflow.concat_with_separator(blob_changes['created'], ', ', 'id')
+		print(f'Deleted blob ids from revision {self._revision_for_blob_sync}: {deleted_blob_changes}')
+
 	@staticmethod
 	def create_blob_server_path(manager_dir_path, file_name):
 		return join_url(manager_dir_path[len(PROJECT_ROOT):], file_name)
@@ -309,3 +345,18 @@ class Workflow:
 	@staticmethod
 	def to_unique(name):
 		return f'{name}_{random.choice(CHARS)}{random.choice(CHARS)}{random.choice(CHARS)}{random.choice(CHARS)}'
+
+	@staticmethod
+	def concat_with_separator(objectToProcess, separator, propertyName = None):
+		isFirst = True
+		result = ''
+		for element in objectToProcess:
+			if not isFirst:
+				result = result + separator
+			else:
+				isFirst = False
+			if propertyName is not None:
+				result = result + ' ' + element[propertyName]
+			else:
+				result = result + ' ' + element
+		return result
