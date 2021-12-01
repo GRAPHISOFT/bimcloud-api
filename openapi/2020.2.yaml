@@ -163,7 +163,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/GetResourceResponse'
+                $ref: '#/components/schemas/Resource'
         430:
           description: 'Request errors'
           content:
@@ -200,7 +200,7 @@ paths:
               schema:
                 type: array
                 items:
-                    $ref: '#/components/schemas/GetResourceResponse'
+                    $ref: '#/components/schemas/Resource'
         430:
           description: 'Request errors'
           content:
@@ -291,6 +291,132 @@ paths:
                 type: object
                 example: {}
                 description: Empty object.
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/update-blob:
+    put:
+      tags:
+        - PortalServer
+      description: |
+        Updates a blob entity identified by id.
+      parameters:
+        - in: query
+          name: session-id
+          schema:
+            type: string
+          description: session-id returned by /management/client/create-session
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      requestBody:
+        description: Blob data
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: d290f1ee-6c54-4b01-90e6-d701748f0851
+                  description: The id of the blob to be updated
+                name:
+                  type: string
+                  example: folder2
+                  description: The new name of the blob
+                type:
+                  type: string
+                  pattern: blob
+                  example: blob
+                  description: The type of the resource to be created.
+      responses:
+        200:
+          description: Successful update-blob request
+          content:
+            application/json:
+              schema:
+                type: object
+                example: {}
+                description: Empty object.
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/get-blob-changes-for-sync:
+    put:
+      tags:
+        - PortalServer
+      description: |
+        Gets blob changes of a specified resource group from a given revision number
+      parameters:
+        - in: query
+          name: session-id
+          schema:
+            type: string
+          description: session-id returned by /management/client/create-session
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      requestBody:
+        description: Blob data
+        content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resourceGroupId:
+                    type: string
+                    example: d290f1ee-6c54-4b01-90e6-d701748f0852
+                    description: The ID of the resource group
+                  path:
+                    type: string
+                    example: Project Root/folder
+                    description: The path of the resource group
+                  fromRevision:
+                    type: number
+                    example: 1
+                    description: The revision number to get the changes from
+      responses:
+        200:
+          description: Successful get-blob-changes-for-sync request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  endRevision:
+                    type: number
+                    example: 1
+                    description: Maximum of the received revisions
+                  created:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GetBlobChangesForSyncResponseCreatedOrUpdatedObject'
+                  updated:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GetBlobChangesForSyncResponseCreatedOrUpdatedObject'
+                  deleted:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          example: d290f1ee-6c54-4b01-90e6-d701748f0852
+                        timestamp:
+                          type: number
+                          example: 8124389429384.234
+                        revision:
+                          type: integer
+                          example: 1
         430:
           description: 'Request errors'
           content:
@@ -773,46 +899,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/BlobServerDetailedError'
 
-  # RESPONSES & CO.
-
 components:
   schemas:
-    CreateSessionRequest:
-      type: object
-      properties:
-        client-id:
-          description: The ID of the client requesting the session
-          type: string
-          example: someclient
-        username:
-          type: string
-          example: some-user
-          description: "Username of the user initiating the request. NOTE: this is case sensitive."
-        password:
-          description: |
-            **IMPORTANT** The password is in cleartext, so it is **IMPERATIVE** that the API gets published via https
-          type: string
-          example: P4$$w0rD
 
-    CreateSessionResponse:
-      type: object
-      properties:
-        session-id:
-          description: The ID of the created session. This ID will be required in every subsequent query.
-          type: string
-          format: uuid
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
-        user-id:
-          description: The ID of the user who created the session
-          type: string
-          format: uuid
-          example: d290f1ee-6c54-4b01-90e6-d701748f0852
-        expire-timeout:
-          description: The amout of time in milliseconds until the session expires upon inactivity
-          type: integer
-          example: 1234567
+  # ENTITY TYPES
 
-    GetResourceResponse:
+    Resource:
       type: object
       properties:
         id:
@@ -894,6 +986,43 @@ components:
           type: integer
           example: 484173
           description: The size of the requested resource in bytes.
+
+  # RESPONSES & CO.
+
+    CreateSessionRequest:
+      type: object
+      properties:
+        client-id:
+          description: The ID of the client requesting the session
+          type: string
+          example: someclient
+        username:
+          type: string
+          example: some-user
+          description: "Username of the user initiating the request. NOTE: this is case sensitive."
+        password:
+          description: |
+            **IMPORTANT** The password is in cleartext, so it is **IMPERATIVE** that the API gets published via https
+          type: string
+          example: P4$$w0rD
+
+    CreateSessionResponse:
+      type: object
+      properties:
+        session-id:
+          description: The ID of the created session. This ID will be required in every subsequent query.
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+        user-id:
+          description: The ID of the user who created the session
+          type: string
+          format: uuid
+          example: d290f1ee-6c54-4b01-90e6-d701748f0852
+        expire-timeout:
+          description: The amout of time in milliseconds until the session expires upon inactivity
+          type: integer
+          example: 1234567
 
     CriterionObject:
       type: object
@@ -1027,7 +1156,7 @@ components:
           description: Timestamp of when this session was created in milliseconds.
         events:
           type: array
-          items: 
+          items:
             type: string
           example: []
           description: Names of the events that occured during the session.
@@ -1181,6 +1310,28 @@ components:
         user-metadata:
           type: object
           description: Reserved for future use.
+
+    GetBlobChangesForSyncResponseCreatedOrUpdatedObject:
+      type: object
+      properties:
+        id:
+          type: string
+          example: d290f1ee-6c54-4b01-90e6-d701748f0852
+        path:
+          type: string
+          example: Project Root/folder1/blob1.jpg
+        name:
+          type: string
+          example: 'blob1.jpg'
+        parentId:
+          type: string
+          example: d290f1ee-6c54-4b01-90e6-d701748f0852
+        timestamp:
+          type: number
+          example: 8124389429384.234
+        revision:
+          type: integer
+          example: 1
 
     # FS ERRORS
 
