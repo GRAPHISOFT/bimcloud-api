@@ -102,6 +102,11 @@ class ManagerApi:
 		response = requests.put(url, params={ 'session-id': session_id }, json=blob)
 		self.process_response(response)
 
+	def update_blob_parent(self, session_id, blob_id, body):
+		url = join_url(self._api_root, 'update-blob-parent')
+		response = requests.post(url, params={ 'session-id': session_id, 'blob-id': blob_id }, json=body)
+		self.process_response(response)
+
 	def get_blob_changes_for_sync(self, session_id, path, resource_group_id, from_revision):
 		url = join_url(self._api_root, 'get-blob-changes-for-sync')
 		request = {

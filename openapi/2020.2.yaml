@@ -351,12 +351,12 @@ paths:
         503:
           description: 'Server unavailable, retry the request later.'
 
-  /management/client/get-blob-changes-for-sync:
+  /management/client/update-blob-parent:
     put:
       tags:
         - PortalServer
       description: |
-        Gets blob changes of a specified resource group from a given revision number
+        Updates parent of a Blob. Baiscally moves it to a different directory.
       parameters:
         - in: query
           name: session-id
@@ -365,7 +365,63 @@ paths:
           description: session-id returned by /management/client/create-session
           example: d290f1ee-6c54-4b01-90e6-d701748f0851
       requestBody:
-        description: Blob data
+        description: Request body. Use one of its properties to modify parent by path or by id.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parentPath:
+                  type: string
+                  example: Project Root/folder2
+                  nullable: true
+                  description: New parent folder's path.
+                parentId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: New parent folder's id.
+      responses:
+        200:
+          description: Successful update.
+          content:
+            application/json:
+              schema:
+                type: boolean
+                example: true
+                description: Parent has been updated or stayed the same.
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/get-blob-changes-for-sync:
+    put:
+      tags:
+        - PortalServer
+      description: |
+        Gets blob changes of a specified resource group from a given revision number.
+
+        Blob Server side changes are accessible for helping synchronization scenarios.
+          We support a simple polling mechanism for that, by utilizing the get-blob-changes-for-sync API.
+          Changesets are separated by revisions, and synchronization always start at revision 0.
+
+        Revision 0 is a special case, it gives all content in the given folder in its result's "created" array field.
+          After revision 0 the next set of changes are are accessible by using the last knonw changeset's "endRevision" value in the request's "fromRevison" parameter.
+      parameters:
+        - in: query
+          name: session-id
+          schema:
+            type: string
+          description: session-id returned by /management/client/create-session
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+      requestBody:
+        description: |
+          Use either resourceGroupId or path as a parameter but sending both is not necessary.
         content:
             application/json:
               schema:
@@ -375,10 +431,12 @@ paths:
                     type: string
                     example: d290f1ee-6c54-4b01-90e6-d701748f0852
                     description: The ID of the resource group
+                    nullable: true
                   path:
                     type: string
                     example: Project Root/folder
                     description: The path of the resource group
+                    nullable: true
                   fromRevision:
                     type: number
                     example: 1
@@ -410,15 +468,21 @@ paths:
                       properties:
                         id:
                           type: string
-                          example: d290f1ee-6c54-4b01-90e6-d701748f0852
-                        timestamp:
-                          type: number
-                          example: 8124389429384.234
-                        revision:
-                          type: integer
-                          example: 1
+                          format: uuid
+                        path:
+                          type: string
+                          example: Project Root/folder1
         430:
-          description: 'Request errors'
+          description: |
+            Request errors.
+
+            Error code 9 is a special case there and it means Revision Obsoleted Error.
+              This happen when the underlying content database has been replaced to another one under the hood,
+              for example after restoring backups.
+
+            When this happens, synchronization flow should reset, and should get started from revision 0.
+              The first request from revision zero will contain the whole content of the folder in the new database in the "created" array field of the API result.
+              The client should use this as a basis of a new synchronization cycle, and should reinitializa its content according the content of the "created" array.
           content:
             application/json:
               schema:
@@ -1316,16 +1380,10 @@ components:
       properties:
         id:
           type: string
-          example: d290f1ee-6c54-4b01-90e6-d701748f0852
+          format: uuid
         path:
           type: string
           example: Project Root/folder1/blob1.jpg
-        name:
-          type: string
-          example: 'blob1.jpg'
-        parentId:
-          type: string
-          example: d290f1ee-6c54-4b01-90e6-d701748f0852
         timestamp:
           type: number
           example: 8124389429384.234
