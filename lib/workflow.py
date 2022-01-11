@@ -44,6 +44,7 @@ class Workflow:
 			self.rename_file()
 			self.move_file()
 			self.locate_download_and_delete_files()
+			self.create_directory_tree_and_delete_recursively()
 		finally:
 			self.logout()
 		# WORKFLOW END
@@ -200,7 +201,7 @@ class Workflow:
 			options['skip'] += limit
 
 		if not all_content:
-			print('Directory has not content.')
+			print('Directory has no content.')
 			return
 
 		print(f'Directory has {len(all_content)} resources.')
@@ -219,6 +220,51 @@ class Workflow:
 		# We do this at last, because non-empty directories cannot get deleted (easily).
 		self._manager_api.delete_resource_group(self._session_id, directory_id)
 		print(f'\nDirectory "{directory_path}" deleted.')
+
+	def create_directory_tree_and_delete_recursively(self):
+		print(f'Creating and deleting a directory subtree.')
+
+		# Creating example directory tree structure:
+		# example_root
+		# L example_sub1
+		#  L example_sub1_sub1
+		#  L example_sub1_sub2
+		# L example_sub2
+		#  L example_sub2_sub1
+		#  L example_sub2_sub2
+		example_root_dir = self.get_or_create_dir(Workflow.to_unique('example_root'))
+		example_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1'), example_root_dir)
+		example_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2'), example_root_dir)
+		example_sub1_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1_sub1'), example_sub1_dir)
+		example_sub1_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1_sub2'), example_sub1_dir)
+		example_sub2_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2_sub1'), example_sub2_dir)
+		example_sub2_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2_sub2'), example_sub2_dir)
+
+		print(f'Example directory subtree created in {example_root_dir["name"]}.')
+
+		# We can delete directorys with their entire content recursively by using delete-resources-by-id-list API.
+		# The API is asynchronous which means the directory won't get deleted as soon as the API call get finished.
+		# The result of the API is a job that we can poll to get result of the ongoing delete operation.
+
+		print(f'\nStartig job to delete {example_root_dir["name"]} recusively.')
+
+		job = self._manager_api.delete_resources_by_id_list(self._session_id, [example_root_dir['id']])
+
+		print(f'Job has been started. Id: {job["id"]}, type: {job["jobType"]}.')
+		print('\nWaiting to job get completed.')
+		while job['status'] != 'completed' and job['status'] != 'failed':
+			print(f'Job stauts is {job["status"]}, polling ...')
+			time.sleep(0.1)
+			job = self._manager_api.get_job(self._session_id, job['id'])
+
+		if job['status'] == 'completed':
+			print(f'Job has been completed successfully.')
+			print(f'Result code: {job["resultCode"]}')
+			print(f'Progress:')
+			print(json.dumps(job['progress'], sort_keys=False, indent=4))
+		else:
+			assert job['status'] == 'failed'
+			print(f'Job has been falied. Erro code: {job["resultCode"]}, error message: {job["resultCode"]}.')
 
 	def download_and_delete_file(self, blob):
 		blob_id = blob['id']
@@ -353,7 +399,7 @@ class Workflow:
 		# Blob Server side changes are accessible for helping synchronization scenarios.
 		# We support a simple polling mechanism for that, by utilizing the get-blob-changes-for-sync API.
 		# Changesets are separated by revisions, and synchronization always start at revision 0.
-		# Revision 0 is a special case, it gives all content in the given folder in its result's "created" array field.
+		# Revision 0 is a special case, it gives all content in the given directory in its result's "created" array field.
 		# After revision 0 the next set of changes are are accessible by using the last knonw changeset's "endRevision" value in the request's "fromRevison" parameter.
 		curr_revision = self._next_revision_for_sync
 		try:
@@ -371,7 +417,7 @@ class Workflow:
 				# This happen when the underlying content database has been replaced to another one under the hood,
 				# for example after restoring backups.
 				# When this happens, synchronization flow should reset, and should get started from revision 0.
-				# The first request from revision zero will contain the whole content of the  of the folder in the new database in the "created" array field of the API result.
+				# The first request from revision zero will contain the whole content of the  of the directory in the new database in the "created" array field of the API result.
 				# The client should use this as a basis of a new synchronization cycle, and should reinitializa its content according the content of the "created" array.
 				self._next_revision_for_sync = 0
 				return self.get_blob_changes(attempt + ':RESET')
