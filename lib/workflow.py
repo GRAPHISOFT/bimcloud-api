@@ -264,7 +264,7 @@ class Workflow:
 			print(json.dumps(job['progress'], sort_keys=False, indent=4))
 		else:
 			assert job['status'] == 'failed'
-			print(f'Job has been falied. Erro code: {job["resultCode"]}, error message: {job["resultCode"]}.')
+			print(f'Job has been falied. Erro code: {job["resultCode"]}, error message: {job["result"]}.')
 
 	def download_and_delete_file(self, blob):
 		blob_id = blob['id']
