@@ -417,8 +417,8 @@ class Workflow:
 				# This happen when the underlying content database has been replaced to another one under the hood,
 				# for example after restoring backups.
 				# When this happens, synchronization flow should reset, and should get started from revision 0.
-				# The first request from revision zero will contain the whole content of the  of the directory in the new database in the "created" array field of the API result.
-				# The client should use this as a basis of a new synchronization cycle, and should reinitializa its content according the content of the "created" array.
+				# The first response from revision zero will contain the whole content of the of the directory in the new database in the "created" array field of the API result.
+				# The client should use this as a basis of a new synchronization cycle, and should reinitialize its content according the content of the "created" array.
 				self._next_revision_for_sync = 0
 				return self.get_blob_changes(attempt + ':RESET')
 			else:
