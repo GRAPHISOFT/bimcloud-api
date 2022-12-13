@@ -90,7 +90,14 @@ class ManagerApi:
 	def delete_resource_group(self, session_id, directory_id):
 		url = join_url(self._api_root, 'delete-resource-group')
 		response = requests.delete(url, params={ 'session-id': session_id, 'resource-id': directory_id })
-		self.process_response(response)
+		result = self.process_response(response)
+		return result
+
+	def delete_resources_by_id_list(self, session_id, ids):
+		url = join_url(self._api_root, 'delete-resources-by-id-list')
+		response = requests.post(url, params={ 'session-id': session_id }, json={ 'ids': ids })
+		result = self.process_response(response)
+		return result
 
 	def delete_blob(self, session_id, blob_id):
 		url = join_url(self._api_root, 'delete-blob')
@@ -100,6 +107,11 @@ class ManagerApi:
 	def update_blob(self, session_id, blob):
 		url = join_url(self._api_root, 'update-blob')
 		response = requests.put(url, params={ 'session-id': session_id }, json=blob)
+		self.process_response(response)
+
+	def update_blob_parent(self, session_id, blob_id, body):
+		url = join_url(self._api_root, 'update-blob-parent')
+		response = requests.post(url, params={ 'session-id': session_id, 'blob-id': blob_id }, json=body)
 		self.process_response(response)
 
 	def get_blob_changes_for_sync(self, session_id, path, resource_group_id, from_revision):
@@ -117,6 +129,18 @@ class ManagerApi:
 	def get_inherited_default_blob_server_id(self, session_id, resource_group_id):
 		url = join_url(self._api_root, 'get-inherited-default-blob-server-id')
 		response = requests.get(url, params={ 'session-id': session_id, 'resource-group-id': resource_group_id })
+		result = self.process_response(response)
+		return result
+
+	def get_job(self, session_id, job_id):
+		url = join_url(self._api_root, 'get-job')
+		response = requests.get(url, params={ 'session-id': session_id, 'job-id': job_id })
+		result = self.process_response(response)
+		return result
+
+	def abort_job(self, session_id, job_id):
+		url = join_url(self._api_root, 'get-job')
+		response = requests.post(url, params={ 'session-id': session_id, 'job-id': job_id })
 		result = self.process_response(response)
 		return result
 

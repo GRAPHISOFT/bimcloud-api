@@ -3,10 +3,12 @@ import string
 import itertools
 import os
 import requests
+import time
+import json
 from .managerapi import ManagerApi
 from .blobserverapi import BlobServerApi
 from .url import join_url, parse_url
-from .errors import BIMcloudBlobServerError
+from .errors import BIMcloudBlobServerError, BIMcloudManagerError
 
 CHARS = list(itertools.chain(string.ascii_lowercase, string.digits))
 PROJECT_ROOT = 'Project Root'
@@ -29,7 +31,9 @@ class Workflow:
 		self._inner_dir_path = None
 		self._model_server_urls = {}
 		self._blob_server_sessions = {}
-		self._revision_for_blob_sync = None
+
+		# Changeset polling starts on revision 0
+		self._next_revision_for_sync = 0
 
 	def run(self):
 		# WORKFLOW BEGIN
@@ -37,8 +41,10 @@ class Workflow:
 		try:
 			self.create_dirs()
 			self.upload_files()
-			self.update_files()
+			self.rename_file()
+			self.move_file()
 			self.locate_download_and_delete_files()
+			self.create_directory_tree_and_delete_recursively()
 		finally:
 			self.logout()
 		# WORKFLOW END
@@ -70,7 +76,7 @@ class Workflow:
 		self._inner_dir_path = join_url(self._sub_dir_data['$path'], self.to_unique('foo'), self.to_unique('bar'))
 		self.upload_file(self._inner_dir_path, 'pic2.jpg')
 
-		self.print_blob_changes(self._sub_dir_data['$path'])
+		self.wait_for_blob_changes()
 
 		print('\nFiles uploaded.')
 
@@ -114,7 +120,7 @@ class Workflow:
 			upload = blob_server_api.begin_upload(blob_server_session_id, blob_server_file_path, batch['namespace-name'])
 
 			# It is advised to upload large content in chunks.
-			CHUNK_SIZE = 1024 * 40 # We use 40Kb but IRL it should be around several megabytes.
+			CHUNK_SIZE = 1024 * 40 # NOTE: We use 40Kb for the DEMO but in real life it should be around several megabytes!
 			offset = 0
 			while offset < len(data):
 				# Advice: Manager's session should get kept alive during long upload sessions.
@@ -131,25 +137,43 @@ class Workflow:
 
 		self.run_with_blob_server_session(model_server, do_upload)
 
-	def update_files(self):
-		print('Renaming files ...')
+	def rename_file(self):
+		print('\nRenaming a file ...')
 
 		text1_blob_path = join_url(self._sub_dir_data['$path'], 'text1.txt')
 		text1_blob = self._manager_api.get_resource(self._session_id, text1_blob_path)
 
 		update_body = {
+			# Update body should contains the identifier.
 			'id': text1_blob['id'],
+			# And to-be-updated properties with their new values.
+			# Please note properties with names starting with '$' cannot get updated from client side, they are read only. (Like $parentId, $path, etc.)
 			'name': 'text1_rename.txt'
 		}
 
 		self._manager_api.update_blob(self._session_id, update_body)
 
-		self.print_blob_changes(self._sub_dir_data['$path'])
+		self.wait_for_blob_changes()
+
+	def move_file(self):
+		print('\nMoving a file (updating parent path) ...')
+
+		text2_blob_path = join_url(self._sub_dir_data['$path'], 'text2.txt')
+		text2_blob = self._manager_api.get_resource(self._session_id, text2_blob_path)
+
+		body = {
+			# aka.: move file to its parent's parent directory.
+			'parentPath': self._root_dir_data['$path']
+		}
+
+		self._manager_api.update_blob_parent(self._session_id, text2_blob['id'], body)
+
+		self.wait_for_blob_changes()
 
 	def locate_download_and_delete_files(self):
-		self.locate_download_and_delete_files_in(self._root_dir_data)
+		self.locate_download_and_delete_files_in(self._root_dir_data, True)
 
-	def locate_download_and_delete_files_in(self, directory):
+	def locate_download_and_delete_files_in(self, directory, get_changes=False):
 		directory_id = directory['id']
 		directory_path = directory['$path']
 
@@ -177,10 +201,10 @@ class Workflow:
 			options['skip'] += limit
 
 		if not all_content:
-			print('Directory has not content.')
+			print('Directory has no content.')
 			return
 
-		print(f'Directory has {len(all_content)} resouurces.')
+		print(f'Directory has {len(all_content)} resources.')
 
 		# Type of directory is 'resourceGroup' in BIMcloud.
 		for subdir in filter(lambda i: i['type'] == 'resourceGroup', all_content):
@@ -190,11 +214,57 @@ class Workflow:
 		for blob in filter(lambda i: i['type'] == 'blob', all_content):
 			self.download_and_delete_file(blob)
 
-		self.print_blob_changes(directory_path)
+		if get_changes:
+			self.wait_for_blob_changes()
 
 		# We do this at last, because non-empty directories cannot get deleted (easily).
 		self._manager_api.delete_resource_group(self._session_id, directory_id)
 		print(f'\nDirectory "{directory_path}" deleted.')
+
+	def create_directory_tree_and_delete_recursively(self):
+		print(f'Creating and deleting a directory subtree.')
+
+		# Creating example directory tree structure:
+		# example_root
+		# L example_sub1
+		#  L example_sub1_sub1
+		#  L example_sub1_sub2
+		# L example_sub2
+		#  L example_sub2_sub1
+		#  L example_sub2_sub2
+		example_root_dir = self.get_or_create_dir(Workflow.to_unique('example_root'))
+		example_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1'), example_root_dir)
+		example_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2'), example_root_dir)
+		example_sub1_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1_sub1'), example_sub1_dir)
+		example_sub1_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1_sub2'), example_sub1_dir)
+		example_sub2_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2_sub1'), example_sub2_dir)
+		example_sub2_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2_sub2'), example_sub2_dir)
+
+		print(f'Example directory subtree created in {example_root_dir["name"]}.')
+
+		# We can delete directorys with their entire content recursively by using delete-resources-by-id-list API.
+		# The API is asynchronous which means the directory won't get deleted as soon as the API call get finished.
+		# The result of the API is a job that we can poll to get result of the ongoing delete operation.
+
+		print(f'\nStartig job to delete {example_root_dir["name"]} recusively.')
+
+		job = self._manager_api.delete_resources_by_id_list(self._session_id, [example_root_dir['id']])
+
+		print(f'Job has been started. Id: {job["id"]}, type: {job["jobType"]}.')
+		print('\nWaiting to job get completed.')
+		while job['status'] != 'completed' and job['status'] != 'failed':
+			print(f'Job stauts is {job["status"]}, polling ...')
+			time.sleep(0.1)
+			job = self._manager_api.get_job(self._session_id, job['id'])
+
+		if job['status'] == 'completed':
+			print(f'Job has been completed successfully.')
+			print(f'Result code: {job["resultCode"]}')
+			print(f'Progress:')
+			print(json.dumps(job['progress'], sort_keys=False, indent=4))
+		else:
+			assert job['status'] == 'failed'
+			print(f'Job has been falied. Erro code: {job["resultCode"]}, error message: {job["result"]}.')
 
 	def download_and_delete_file(self, blob):
 		blob_id = blob['id']
@@ -318,20 +388,42 @@ class Workflow:
 		self._session_id = None
 		self._model_server_urls = {}
 
-	def print_blob_changes(self, path):
-		if self._revision_for_blob_sync is None:
-			self._revision_for_blob_sync = 0
-		else:
-			self._revision_for_blob_sync = self._revision_for_blob_sync + 1
+	def wait_for_blob_changes(self):
+		# It migth take a couple of seconds until the next changeset appears.
+		for i in range(10):
+			if self.get_blob_changes(str(i + 1)):
+				break
+			time.sleep(3)
 
-		print('Getting changes for sync...')
-		blob_changes = self._manager_api.get_blob_changes_for_sync(self._session_id, path, None, self._revision_for_blob_sync)
-		created_blob_changes = Workflow.concat_with_separator(blob_changes['created'], ', ', 'name')
-		print(f'Created blob names from revision {self._revision_for_blob_sync}: {created_blob_changes}')
-		updated_blob_changes = Workflow.concat_with_separator(blob_changes['updated'], ', ', 'name')
-		print(f'Updated blob names from revision {self._revision_for_blob_sync}: {updated_blob_changes}')
-		deleted_blob_changes = Workflow.concat_with_separator(blob_changes['deleted'], ', ', 'id')
-		print(f'Deleted blob ids from revision {self._revision_for_blob_sync}: {deleted_blob_changes}')
+	def get_blob_changes(self, attempt):
+		# Blob Server side changes are accessible for helping synchronization scenarios.
+		# We support a simple polling mechanism for that, by utilizing the get-blob-changes-for-sync API.
+		# Changesets are separated by revisions, and synchronization always start at revision 0.
+		# Revision 0 is a special case, it gives all content in the given directory in its result's "created" array field.
+		# After revision 0 the next set of changes are are accessible by using the last knonw changeset's "endRevision" value in the request's "fromRevison" parameter.
+		curr_revision = self._next_revision_for_sync
+		try:
+			path = self._root_dir_data['$path']
+			print(f'\nAttempt #{attempt}: Getting changes after revision {curr_revision} from: "{path}".\n')
+
+			blob_changes = self._manager_api.get_blob_changes_for_sync(self._session_id, path, None, curr_revision)
+
+			print(json.dumps(blob_changes, sort_keys=False, indent=4))
+
+			self._next_revision_for_sync = blob_changes['endRevision']
+		except BIMcloudManagerError as err:
+			if err.code == 9:
+				# Error code 9 means Revision Obsoleted Error.
+				# This happen when the underlying content database has been replaced to another one under the hood,
+				# for example after restoring backups.
+				# When this happens, synchronization flow should reset, and should get started from revision 0.
+				# The first response from revision zero will contain the whole content of the of the directory in the new database in the "created" array field of the API result.
+				# The client should use this as a basis of a new synchronization cycle, and should reinitialize its content according the content of the "created" array.
+				self._next_revision_for_sync = 0
+				return self.get_blob_changes(attempt + ':RESET')
+			else:
+				raise
+		return self._next_revision_for_sync != curr_revision
 
 	@staticmethod
 	def create_blob_server_path(manager_dir_path, file_name):
@@ -345,18 +437,3 @@ class Workflow:
 	@staticmethod
 	def to_unique(name):
 		return f'{name}_{random.choice(CHARS)}{random.choice(CHARS)}{random.choice(CHARS)}{random.choice(CHARS)}'
-
-	@staticmethod
-	def concat_with_separator(objectToProcess, separator, propertyName = None):
-		isFirst = True
-		result = ''
-		for element in objectToProcess:
-			if not isFirst:
-				result = result + separator
-			else:
-				isFirst = False
-			if propertyName is not None:
-				result = result + ' ' + element[propertyName]
-			else:
-				result = result + ' ' + element
-		return result
