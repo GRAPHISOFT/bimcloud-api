@@ -1,0 +1,14 @@
+[FORMAT]
+indent-string=\t
+max-line-length=240
+disable=
+	C0114, # missing-module-docstring
+	C0115, # missing-class-docstring
+	C0116, # missing-function-docstring
+	W0702, # bare-except
+	C0304, # missing-final-newline
+	W0231, # super-init-not-called
+	C0321, # multiple-statements
+	C0103, # invalid-name
+	W0703, # broad-except
+	C0200, # consider-using-enumerate
