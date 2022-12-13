@@ -330,7 +330,7 @@ class Workflow:
 		print(f'Created blob names from revision {self._revision_for_blob_sync}: {created_blob_changes}')
 		updated_blob_changes = Workflow.concat_with_separator(blob_changes['updated'], ', ', 'name')
 		print(f'Updated blob names from revision {self._revision_for_blob_sync}: {updated_blob_changes}')
-		deleted_blob_changes = Workflow.concat_with_separator(blob_changes['created'], ', ', 'id')
+		deleted_blob_changes = Workflow.concat_with_separator(blob_changes['deleted'], ', ', 'id')
 		print(f'Deleted blob ids from revision {self._revision_for_blob_sync}: {deleted_blob_changes}')
 
 	@staticmethod
