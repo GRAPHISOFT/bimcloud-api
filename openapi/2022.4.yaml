@@ -122,11 +122,12 @@ paths:
       description: |
         Requests a ticket. The ticket is required for file operations.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
+            example: Bearer <access_token>
+          description: Token type and token
       requestBody:
         content:
           application/json:
@@ -162,12 +163,12 @@ paths:
       description: |
         Request a single resource by ID.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
         - in: query
           name: resource-id
           schema:
@@ -197,12 +198,12 @@ paths:
       description: |
         Requests an array of resources that match the supplied criterion object
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
       requestBody:
         description: The criterion object
         content:
@@ -234,12 +235,12 @@ paths:
       description: |
         Creates a resrource group (folder) entity in the resource tree based on the supplied parameters
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
         - in: query
           name: parent-id
           schema:
@@ -287,12 +288,12 @@ paths:
       description: |
         Deletes an **empty** resrource group (folder) entity from the resource tree by ID.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
         - in: query
           name: resource-id
           schema:
@@ -324,12 +325,12 @@ paths:
       description: |
         Starts a job to delete resources by specified identifiers. The job deletes folders recursively.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
       responses:
         200:
           description: Job of type *destroyResources* representing the on-giong operation to delete resources.
@@ -353,12 +354,12 @@ paths:
       description: |
         Updates a blob entity identified by id.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
       requestBody:
         description: Blob data
         content:
@@ -404,12 +405,12 @@ paths:
       description: |
         Updates parent of a Blob. Baiscally moves it to a different directory.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
       requestBody:
         description: Request body. Use one of its properties to modify parent by path or by id.
         content:
@@ -459,12 +460,12 @@ paths:
         Revision 0 is a special case, it gives all content in the given folder in its result's "created" array field.
           After revision 0 the next set of changes are are accessible by using the last knonw changeset's "endRevision" value in the request's "fromRevison" parameter.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
       requestBody:
         description: |
           Use either resourceGroupId or path as a parameter but sending both is not necessary.
@@ -543,12 +544,12 @@ paths:
       description: |
         Deletes a file entity from the resource tree by ID.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
         - in: query
           name: resource-id
           schema:
@@ -580,12 +581,12 @@ paths:
       description: |
         Requests the inherited default blob server ID of a specified resourceGroup (folder) entitiy
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
         - in: query
           name: resource-group-id
           schema:
@@ -620,12 +621,12 @@ paths:
       description: |
         Request a single job by ID.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
         - in: query
           name: job-id
           schema:
@@ -659,12 +660,12 @@ paths:
       description: |
         Request to abort a running job.
       parameters:
-        - in: query
-          name: session-id
+        - in: header
+          name: Authorization
           schema:
             type: string
-          description: session-id returned by /management/client/create-session
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+            example: Bearer <access_token>
+          description: Token type and token
         - in: query
           name: job-id
           schema:
