@@ -10,7 +10,7 @@ info:
     BIMcloud API specifiaction.
     See the provided example for detailed information.
   version: "1.0.0"
-  title: BIMcloud API 2020.2 (alpha release)
+  title: BIMcloud API 2022.4 (alpha release)
 tags:
   - name: PortalServer
     description: |
