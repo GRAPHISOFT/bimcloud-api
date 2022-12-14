@@ -72,90 +72,48 @@ paths:
             schema:
               $ref: '#/components/schemas/PostAuthorizeRequest'
       responses:
-         200:
+        200:
           description: 'Generates an authorization code'
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/PostAuthorizeResponse'
-
-
-  /management/client/create-sessionZ:
+        400:
+          description: 'Invalid request error, invalid client error, invalid scope error, unsupported response type error'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+  
+  /management/client/oauth2/token:
     post:
       tags:
         - PortalServer
-      description: Creates a new session for callee.
+      description: Retrieves an access token by `grant_type`. Not every property is required for every `grant_type`. See schema for details.
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateSessionRequest'
+              $ref: '#/components/schemas/GetTokenRequest'
       responses:
         200:
-          description: 'Creates a new session'
+          description: Successfully retrieved token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateSessionResponse'
-        430:
-          description: 'Request errors'
+                $ref: '#/components/schemas/GetTokenResponse'
+        400:
+          description: Invalid request error, invalid client error, unsupported grant type error, unauthorized client error
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PortalServerError'
+                $ref: '#/components/schemas/OauthError'
         503:
-          description: 'Server unavailable, retry the request later.'
-
-  /management/client/ping-session:
-    post:
-      tags:
-        - PortalServer
-      description: Pings an already opened session to prevent expiration.
-      parameters:
-        - in: query
-          name: session-id
-          schema:
-            type: string
-          description: The ID of the session to keep alive
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
-      responses:
-        200:
-          description: 'Session lifetime extended.'
+          description: Server error
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  user-id:
-                    type: string
-                    example: d290f1ee-6c54-4b01-90e6-d701748f0852
-                    description: The ID of the user whose session got extended
-        430:
-          description: 'Request errors'
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PortalServerError'
-        503:
-          description: 'Server unavailable, retry the request later.'
-
-  /management/client/close-session:
-    post:
-      tags:
-        - PortalServer
-      description: Closes the session.
-      parameters:
-        - in: query
-          name: session-id
-          schema:
-            type: string
-          description: The ID of the session to close
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
-      responses:
-        200:
-          description: Session has been successfully closed, if session with the provided id was found
-        503:
-          description: 'Server unavailable, retry the request later.'
+                $ref: '#/components/schemas/OauthError'
 
   /management/client/ticket-generator/get-ticket:
     post:
@@ -1261,41 +1219,6 @@ components:
           example: https://example.com?state=d290f1ee-6c54-4b01-90e6-d701748f0851&authorization_code=1234f1ee-6c54-4b01-90e6-d701748f0851
           description: "Redirect URI containing the state and the authorization code associated with the authorization process"
 
-    CreateSessionRequest:
-      type: object
-      properties:
-        client-id:
-          description: The ID of the client requesting the session
-          type: string
-          example: someclient
-        username:
-          type: string
-          example: some-user
-          description: "Username of the user initiating the request. NOTE: this is case sensitive."
-        password:
-          description: |
-            **IMPORTANT** The password is in cleartext, so it is **IMPERATIVE** that the API gets published via https
-          type: string
-          example: P4$$w0rD
-
-    CreateSessionResponse:
-      type: object
-      properties:
-        session-id:
-          description: The ID of the created session. This ID will be required in every subsequent query.
-          type: string
-          format: uuid
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
-        user-id:
-          description: The ID of the user who created the session
-          type: string
-          format: uuid
-          example: d290f1ee-6c54-4b01-90e6-d701748f0852
-        expire-timeout:
-          description: The amout of time in milliseconds until the session expires upon inactivity
-          type: integer
-          example: 1234567
-
     CriterionObject:
       type: object
       description: |
@@ -1315,7 +1238,7 @@ components:
       type: object
       properties:
         user-id:
-          description: The ID of the user who requested the session. Returned by /management/client/create-session
+          description: The ID of the user who requested the session. Included in the response from `/token`
           type: string
           format: uuid
           example: d290f1ee-6c54-4b01-90e6-d701748f0852
@@ -1772,7 +1695,7 @@ components:
       properties:
         error:
           type: string
-          example: server_error
+          example: some_error
           description: Error name
         error_description:
           type: string
@@ -1783,7 +1706,60 @@ components:
           properties:
             error-code:
               type: number
-              example: 1
+              example: 911
             error-message:
               type: string
               example: Some error happened
+
+    GetTokenRequest:
+      type: object
+      properties:
+        grant_type:
+          type: string
+          description: '`refresh_token` or `authorization_code`'
+          example: authorization_code
+        client-id:
+          type: string
+          description: 'Client identification'
+          example: example.com
+        code:
+          type: string
+          description: 'The authorization code. Required for `authorization_code` grant type.'
+          example: authorization_code
+        redirect_uri:
+          type: string
+          description: 'The redirect URI. Only for `authorization_code` grant type.'
+          example: https://example.com
+        refresh_token:
+          type: string
+          description: 'The refresh token. Only for `refresh_token` grant type.'
+          example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25uZWN0aW9uSWQiOiI1OGIyMzVkYS0zMmRkLTE3OGItMjZiNi1lNjA0ODg1YzZmYWUiLCJ1c2VySWQiOiJ0dTEiLCJjbGllbnRJZCI6ImdyYXBoaXNvZnQuY29tIiwicGxhdGZvcm0iOiJ3ZWJVSSIsImV4cCI6MTY3MTAyMzM4MywianRpIjoiNGUzYTEzZTYtYWExNC01YWZhLTBlMjQtY2E2YThlNmRmNmNiIiwiaWF0IjoxNjcxMDIzMzczLCJ0eXBlIjoicmVmcmVzaCJ9.aBzGe3Ce_dmbON67Fs001vSU6H7yEcTlUHMBZHqq9bO0ryA0KKwjHGgZRLNL9S-qBw8obeFqWZ3IsqBGyneY7o--Qxa-jmS4iKBxqValYNOzIAQFVd9PKMWbkyKX204KIAPck5sGWZcRvyNocHluzrimmExhxhWTZ_Y_WU5r8pk
+
+    GetTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0dTEiLCJjbGllbnRJZCI6ImdyYXBoaXNvZnQuY29tIiwicGxhdGZvcm0iOiJ3ZWJVSSIsImV4cCI6MTY3MTAyMzM4MywianRpIjoiMWI5NWI4MWEtZWNjNC0zODYzLTQwNjYtNzc0NzExYjQ4ZGRhIiwiaWF0IjoxNjcxMDIzMzczLCJ0eXBlIjoiYWNjZXNzIn0.GO8vaTNPMeq8GZEU7bAvj6zWNyzt_a1korLhEbdjhsdhm834jBg1mDEQfqpRUq2MwaMQNUb3EyKKj4bxni72UPXPSaDN4mecinqHXqO6sK6gtOF_wAVqV8Z701FfyACors5iwlBARcJZmhcqSMNCwTrVho8FTv8eHXZm9yFf_BQ
+          description: The access token (JWT)
+        access_token_exp:
+          type: number
+          example: 1671023383
+          description: The expiration time of the access token (UNIX timestamp)
+        refresh_token:
+          type: string
+          example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25uZWN0aW9uSWQiOiI1OGIyMzVkYS0zMmRkLTE3OGItMjZiNi1lNjA0ODg1YzZmYWUiLCJ1c2VySWQiOiJ0dTEiLCJjbGllbnRJZCI6ImdyYXBoaXNvZnQuY29tIiwicGxhdGZvcm0iOiJ3ZWJVSSIsImV4cCI6MTY3MTAyMzM4MywianRpIjoiNGUzYTEzZTYtYWExNC01YWZhLTBlMjQtY2E2YThlNmRmNmNiIiwiaWF0IjoxNjcxMDIzMzczLCJ0eXBlIjoicmVmcmVzaCJ9.aBzGe3Ce_dmbON67Fs001vSU6H7yEcTlUHMBZHqq9bO0ryA0KKwjHGgZRLNL9S-qBw8obeFqWZ3IsqBGyneY7o--Qxa-jmS4iKBxqValYNOzIAQFVd9PKMWbkyKX204KIAPck5sGWZcRvyNocHluzrimmExhxhWTZ_Y_WU5r8pk
+          description: The refresh token (JWT)
+        refresh_token_exp:
+          type: number
+          example: 1671023383
+          description: The expiration time of the refresh token (UNIX timestamp)
+        token_type:
+          type: string
+          example: Bearer
+          description: The type of the token issued. Only `Bearer` is supported.
+        user_id:
+          type: string
+          example: 8d597df5-1a4b-44c5-8f39-73173092947d
+          description: The id of the user to whom the token was issued
+        
