@@ -1,3 +1,4 @@
+import datetime
 import random
 import string
 import itertools
@@ -21,7 +22,8 @@ class Workflow:
 		self.username = username
 		self._password = password
 		self.client_id = client_id
-		self._session_id = None
+		self._access_token = None
+		self._refresh_token = None
 		self._user_id = None
 
 		self._root_dir_name = Workflow.to_unique('DEMO_RootDir')
@@ -38,6 +40,7 @@ class Workflow:
 	def run(self):
 		# WORKFLOW BEGIN
 		self.login()
+		self.perform_token_refresh()
 		try:
 			self.create_dirs()
 			self.upload_files()
@@ -51,8 +54,20 @@ class Workflow:
 
 	def login(self):
 		print(f'Login as {self.username} ...')
-		self._user_id, self._session_id = self._manager_api.create_session(self.username, self._password, self.client_id)
+		self._user_id, self._access_token, self._refresh_token, access_exp, refresh_exp, token_type = self._manager_api.get_token_by_password_grant(self.username, self._password, self.client_id)
+		print(f'Received token type is "{token_type}"')
+		print(f'Access token is going to expire at {Workflow.convert_timestamp(access_exp)}')
+		print(f'Refresh token is going to expire at {Workflow.convert_timestamp(refresh_exp)}')
 		print('Logged in.')
+
+	def perform_token_refresh(self):
+		print('Using refresh token to obtain new access and refresh token...')
+		self._user_id, self._access_token, self._refresh_token, access_exp, refresh_exp, token_type = self._manager_api.get_token_by_refresh_token_grant(self._refresh_token, self.client_id)
+		print(f'Received token type is "{token_type}".')
+		print(f'Access token is going to expire at {Workflow.convert_timestamp(access_exp)}')
+		print(f'Refresh token is going to expire at {Workflow.convert_timestamp(refresh_exp)}')
+		print('Tokens received')
+
 
 	def create_dirs(self):
 		print('Creating directories ...')
@@ -98,11 +113,11 @@ class Workflow:
 
 		configured_blob_server_id = \
 			self._manager_api.get_inherited_default_blob_server_id(
-				self._session_id,
+				self._access_token,
 				immediate_parent_dir['id'])
 
 		# Blob Server is a role of a Model Server, basically they are the same thing:
-		model_server = self._manager_api.get_resource_by_id(self._session_id, configured_blob_server_id)
+		model_server = self._manager_api.get_resource_by_id(self._access_token, configured_blob_server_id)
 		model_server_name = model_server['name']
 		print(f'Configured host Blob Server: "{ model_server_name }".')
 
@@ -123,9 +138,6 @@ class Workflow:
 			CHUNK_SIZE = 1024 * 40 # NOTE: We use 40Kb for the DEMO but in real life it should be around several megabytes!
 			offset = 0
 			while offset < len(data):
-				# Advice: Manager's session should get kept alive during long upload sessions.
-				self._manager_api.ping_session(self._session_id)
-
 				chunk = data[offset:offset + CHUNK_SIZE]
 				blob_server_api.put_blob_content_part(blob_server_session_id, upload['id'], chunk, offset=offset)
 				offset += CHUNK_SIZE
@@ -141,7 +153,7 @@ class Workflow:
 		print('\nRenaming a file ...')
 
 		text1_blob_path = join_url(self._sub_dir_data['$path'], 'text1.txt')
-		text1_blob = self._manager_api.get_resource(self._session_id, text1_blob_path)
+		text1_blob = self._manager_api.get_resource(self._access_token, text1_blob_path)
 
 		update_body = {
 			# Update body should contains the identifier.
@@ -151,7 +163,7 @@ class Workflow:
 			'name': 'text1_rename.txt'
 		}
 
-		self._manager_api.update_blob(self._session_id, update_body)
+		self._manager_api.update_blob(self._access_token, update_body)
 
 		self.wait_for_blob_changes()
 
@@ -159,14 +171,14 @@ class Workflow:
 		print('\nMoving a file (updating parent path) ...')
 
 		text2_blob_path = join_url(self._sub_dir_data['$path'], 'text2.txt')
-		text2_blob = self._manager_api.get_resource(self._session_id, text2_blob_path)
+		text2_blob = self._manager_api.get_resource(self._access_token, text2_blob_path)
 
 		body = {
 			# aka.: move file to its parent's parent directory.
 			'parentPath': self._root_dir_data['$path']
 		}
 
-		self._manager_api.update_blob_parent(self._session_id, text2_blob['id'], body)
+		self._manager_api.update_blob_parent(self._access_token, text2_blob['id'], body)
 
 		self.wait_for_blob_changes()
 
@@ -194,7 +206,7 @@ class Workflow:
 		}
 		all_content = []
 		while True:
-			content = self._manager_api.get_resources_by_criterion(self._session_id, criterion, options)
+			content = self._manager_api.get_resources_by_criterion(self._access_token, criterion, options)
 			all_content.extend(content)
 			if len(content) < limit:
 				break
@@ -218,11 +230,11 @@ class Workflow:
 			self.wait_for_blob_changes()
 
 		# We do this at last, because non-empty directories cannot get deleted (easily).
-		self._manager_api.delete_resource_group(self._session_id, directory_id)
+		self._manager_api.delete_resource_group(self._access_token, directory_id)
 		print(f'\nDirectory "{directory_path}" deleted.')
 
 	def create_directory_tree_and_delete_recursively(self):
-		print(f'Creating and deleting a directory subtree.')
+		print('Creating and deleting a directory subtree.')
 
 		# Creating example directory tree structure:
 		# example_root
@@ -235,10 +247,10 @@ class Workflow:
 		example_root_dir = self.get_or_create_dir(Workflow.to_unique('example_root'))
 		example_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1'), example_root_dir)
 		example_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2'), example_root_dir)
-		example_sub1_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1_sub1'), example_sub1_dir)
-		example_sub1_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub1_sub2'), example_sub1_dir)
-		example_sub2_sub1_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2_sub1'), example_sub2_dir)
-		example_sub2_sub2_dir = self.get_or_create_dir(Workflow.to_unique('example_sub2_sub2'), example_sub2_dir)
+		self.get_or_create_dir(Workflow.to_unique('example_sub1_sub1'), example_sub1_dir)
+		self.get_or_create_dir(Workflow.to_unique('example_sub1_sub2'), example_sub1_dir)
+		self.get_or_create_dir(Workflow.to_unique('example_sub2_sub1'), example_sub2_dir)
+		self.get_or_create_dir(Workflow.to_unique('example_sub2_sub2'), example_sub2_dir)
 
 		print(f'Example directory subtree created in {example_root_dir["name"]}.')
 
@@ -248,19 +260,19 @@ class Workflow:
 
 		print(f'\nStartig job to delete {example_root_dir["name"]} recusively.')
 
-		job = self._manager_api.delete_resources_by_id_list(self._session_id, [example_root_dir['id']])
+		job = self._manager_api.delete_resources_by_id_list(self._access_token, [example_root_dir['id']])
 
 		print(f'Job has been started. Id: {job["id"]}, type: {job["jobType"]}.')
 		print('\nWaiting to job get completed.')
 		while job['status'] != 'completed' and job['status'] != 'failed':
 			print(f'Job stauts is {job["status"]}, polling ...')
 			time.sleep(0.1)
-			job = self._manager_api.get_job(self._session_id, job['id'])
+			job = self._manager_api.get_job(self._access_token, job['id'])
 
 		if job['status'] == 'completed':
-			print(f'Job has been completed successfully.')
+			print('Job has been completed successfully.')
 			print(f'Result code: {job["resultCode"]}')
-			print(f'Progress:')
+			print('Progress:')
 			print(json.dumps(job['progress'], sort_keys=False, indent=4))
 		else:
 			assert job['status'] == 'failed'
@@ -271,7 +283,7 @@ class Workflow:
 		blob_path = blob['$path']
 
 		blob_model_server_id = blob['modelServerId']
-		blob_model_server = self._manager_api.get_resource_by_id(self._session_id, blob_model_server_id)
+		blob_model_server = self._manager_api.get_resource_by_id(self._access_token, blob_model_server_id)
 
 		def download(blob_server_session_id, blob_server_api):
 			print(f'\nDownloading "{blob_path}".')
@@ -289,7 +301,7 @@ class Workflow:
 
 		self.run_with_blob_server_session(blob_model_server, download)
 
-		self._manager_api.delete_blob(self._session_id, blob_id)
+		self._manager_api.delete_blob(self._access_token, blob_id)
 		print(f'\nBlob "{blob_path}" deleted.')
 
 	def run_with_blob_server_session(self, model_server, fn):
@@ -302,7 +314,7 @@ class Workflow:
 			blob_server_api = BlobServerApi(model_server_url)
 
 			# Ticket is an authentication token for Model (Blob) Server.
-			ticket = self._manager_api.get_ticket(self._session_id, model_server['id'])
+			ticket = self._manager_api.get_ticket(self._access_token, model_server['id'])
 
 			blob_server_session_id = blob_server_api.create_session(self.username, ticket)
 
@@ -346,7 +358,7 @@ class Workflow:
 
 	def find_immediate_parent_dir(self, path):
 		# We should find the immediate existing (parent) directory of an arbitrary path.
-		dir_data = self._manager_api.get_resource(self._session_id, by_path=path, try_get=True)
+		dir_data = self._manager_api.get_resource(self._access_token, by_path=path, try_get=True)
 		if dir_data is None or dir_data['type'] != 'resourceGroup':
 			idx = path.rindex('/')
 			return self.find_immediate_parent_dir(path[0:idx])
@@ -357,7 +369,7 @@ class Workflow:
 		path_of_dir = self.ensure_root(path_of_dir)
 
 		print(f'Getting directory "{path_of_dir}" ...')
-		dir_data = self._manager_api.get_resource(self._session_id, by_path=path_of_dir)
+		dir_data = self._manager_api.get_resource(self._access_token, by_path=path_of_dir)
 
 		if dir_data is not None:
 			print('Directory exists.')
@@ -366,11 +378,11 @@ class Workflow:
 		print('Directory doesn\'t exist, creating ...')
 
 		dir_id = self._manager_api.create_resource_group(
-			self._session_id,
+			self._access_token,
 			name,
 			parent['id'] if parent is not None else PROJECT_ROOT_ID)
 
-		dir_data = self._manager_api.get_resource(self._session_id, by_id=dir_id)
+		dir_data = self._manager_api.get_resource(self._access_token, by_id=dir_id)
 
 		dir_path = dir_data['$path']
 		assert dir_path == path_of_dir, 'Resource created on a wrong path.'
@@ -380,12 +392,12 @@ class Workflow:
 		return dir_data
 
 	def logout(self):
-		self._manager_api.close_session(self._session_id)
+		# Since access tokens are decentralized, manager API is lack of logout methods
 		for server_id in self._blob_server_sessions:
 			session_id, api = self._blob_server_sessions[server_id]
 			api.close_session(session_id)
 		self._blob_server_sessions = {}
-		self._session_id = None
+		self._access_token = None
 		self._model_server_urls = {}
 
 	def wait_for_blob_changes(self):
@@ -406,7 +418,7 @@ class Workflow:
 			path = self._root_dir_data['$path']
 			print(f'\nAttempt #{attempt}: Getting changes after revision {curr_revision} from: "{path}".\n')
 
-			blob_changes = self._manager_api.get_blob_changes_for_sync(self._session_id, path, None, curr_revision)
+			blob_changes = self._manager_api.get_blob_changes_for_sync(self._access_token, path, None, curr_revision)
 
 			print(json.dumps(blob_changes, sort_keys=False, indent=4))
 
@@ -437,3 +449,7 @@ class Workflow:
 	@staticmethod
 	def to_unique(name):
 		return f'{name}_{random.choice(CHARS)}{random.choice(CHARS)}{random.choice(CHARS)}{random.choice(CHARS)}'
+
+	@staticmethod
+	def convert_timestamp(timestamp):
+		return datetime.datetime.fromtimestamp(timestamp).strftime("%B %d, %Y %I:%M:%S")
