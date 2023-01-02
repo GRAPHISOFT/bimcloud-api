@@ -159,15 +159,15 @@ class ManagerApi:
 			response = req(url, **kwargs, headers={ 'Authorization': f'Bearer {auth_context._access_token}' })
 			return self.process_response(response, json=responseJson)
 		except HttpError as e:
-			errorJson = e.response.json()
-			if not (e.status_code == 401 and 'error' in errorJson and errorJson['error'] == 'invalid_token'):
-				raise e
-
-			result = self.get_token_by_refresh_token_grant(auth_context._refresh_token, auth_context.client_id)
-			auth_context._access_token = result._access_token
-			auth_context._refresh_token = result._refresh_token
-			response = req(url, headers={ 'Authorization': f'Bearer {auth_context._access_token}' }, **kwargs)
-			return self.process_response(response, json=responseJson)
+			if e.status_code == 401:
+				errorJson = e.response.json()
+				if 'error' in errorJson and errorJson['error'] == 'invalid_token':
+					result = self.get_token_by_refresh_token_grant(auth_context._refresh_token, auth_context.client_id)
+					auth_context._access_token = result._access_token
+					auth_context._refresh_token = result._refresh_token
+					response = req(url, headers={ 'Authorization': f'Bearer {auth_context._access_token}' }, **kwargs)
+					return self.process_response(response, json=responseJson)
+			raise e
 
 	@staticmethod
 	def process_response(response, json=True):
