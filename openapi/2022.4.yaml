@@ -25,7 +25,7 @@ paths:
     get:
       tags:
         - PortalServer
-      description: Initiates oauth2 auth.
+      description: Initiates oauth2 auth flow with an HTML page for user credentials.
       parameters:
         - in: query
           name: state
@@ -33,16 +33,19 @@ paths:
             type: string
             minLength: 16
             maxLength: 2048
-          description: Client specific state identification
+          description: Client specific state identification. Required minimum length 16, maximum length 2048.
           example: d290f1ee-6c54-4b01-90e6-d701748f0851
           required: true
         - in: query
           name: redirect_uri
           schema:
             type: string
-          description: URI of the site to redirect to
+          description: |
+            URI of the site to redirect to as a callback. Will include the authorization code as query parameter `code`.
+            When provided, it has to match with the `redirect_uri` provided in the POST /token request.
+            When not provided, it defaults to the BIMcloud manager's unique URL
           example: https://example.com
-          required: true
+          required: false
         - in: query
           name: client_id
           schema:
@@ -53,37 +56,43 @@ paths:
 
       responses: 
         200:
-          description: 'Initiates authentication'
-        503:
+          description: 'Initiates authentication flow with an HTML page for user credentials.'
+        500:
           description: 'Code already generated for this state'
           content:
             application/json:
               schema: 
                 $ref: '#/components/schemas/OauthError'
-                
 
-    post:
+  /management/client/oauth2/get-authorization-code-by-state:
+    get:
       tags:
         - PortalServer
-      description: Generates an authorization code
-      requestBody:
-        content:
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PostAuthorizeRequest'
-      responses:
+      description: Polls for the status of authorization code generation
+      parameters:
+        - in: query
+          name: state
+          schema:
+            type: string
+            minLength: 16
+            maxLength: 2048
+          description: Client specific state identification. Required minimum length 16, maximum length 2048.
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+          required: true
+
+      responses: 
         200:
-          description: 'Generates an authorization code'
+          description: Authentication code generation status
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PostAuthorizeResponse'
-        400:
-          description: 'Invalid request error, invalid client error, invalid scope error, unsupported response type error'
+                $ref: '#/components/schemas/GetAuthenticationCodeByStateResponse'
+        430:
+          description: 'Request errors'
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OauthError'
+                $ref: '#/components/schemas/PortalServerError'
   
   /management/client/oauth2/token:
     post:
@@ -108,7 +117,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OauthError'
-        503:
+        500:
           description: Server error
           content:
             application/json:
@@ -1183,43 +1192,6 @@ components:
 
   # RESPONSES & CO.
 
-    PostAuthorizeRequest:
-      type: object
-      properties:
-        username:
-          type: string
-          example: some-user
-          description: "Username of the user initiating the request. NOTE: this is case sensitive."
-        password:
-          description: |
-            **IMPORTANT** The password is in cleartext, so it is **IMPERATIVE** that the API gets published via https
-          type: string
-          example: P4$$w0rD
-        state:
-          type: string
-          description: Client specific state identification
-          example: d290f1ee-6c54-4b01-90e6-d701748f0851
-        client-id:
-          description: The ID of the client requesting the session
-          type: string
-          example: someclient
-        response_type:
-          description: Type of expected response. Currently, only `code` is supported.
-          type: string
-          example: code
-        redirect_uri:
-          description: The URI given during the GET call to this endpoint
-          type: string
-          example: https://example.com
-
-    PostAuthorizeResponse:
-      type: object
-      properties:
-        redirectUri:
-          type: string
-          example: https://example.com?state=d290f1ee-6c54-4b01-90e6-d701748f0851&authorization_code=1234f1ee-6c54-4b01-90e6-d701748f0851
-          description: "Redirect URI containing the state and the authorization code associated with the authorization process"
-
     CriterionObject:
       type: object
       description: |
@@ -1697,7 +1669,10 @@ components:
         error:
           type: string
           example: some_error
-          description: Error name
+          description: | 
+            'Error name. Possible values: `access_denied`, `insufficient_scope`, `invalid_argument`, `invalid_client`'
+            '`invalid_grant`, `invalid_request`, `invalid_scope`, `invalid_token`, `server_error`, `unauthorized_client`'
+            '`unauthorized_request`, `unsupported_grant_type`, `unsupported_response_type`'
         error_description:
           type: string
           example: Some error happened
@@ -1725,11 +1700,11 @@ components:
           example: example.com
         code:
           type: string
-          description: 'The authorization code. Required for `authorization_code` grant type.'
+          description: 'The authorization code obtained from redirect_uri or the poll api. Required for `authorization_code` grant type.'
           example: authorization_code
         redirect_uri:
           type: string
-          description: 'The redirect URI. Only for `authorization_code` grant type.'
+          description: 'The redirect URI. Only for `authorization_code` grant type. Only required if provided in the GET /authorize request and only the same URI is allowed.'
           example: https://example.com
         refresh_token:
           type: string
@@ -1763,4 +1738,15 @@ components:
           type: string
           example: 8d597df5-1a4b-44c5-8f39-73173092947d
           description: The id of the user to whom the token was issued
-        
+  
+    GetAuthenticationCodeByStateResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          description: '`succeeded` or `pending`'
+          example: succeeded
+        code:
+          type: string
+          description: 'The authorization code generated or `null`, if pending'
+          example: 8d597df5-1a4b-44c5-8f39-73173092947d
