@@ -154,6 +154,12 @@ paths:
             application/octet-stream:
               schema:
                 $ref: '#/components/schemas/GetTicketResponseLengthPrefixedBuffer'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -191,6 +197,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Resource'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -228,6 +240,12 @@ paths:
                 type: array
                 items:
                     $ref: '#/components/schemas/Resource'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -281,6 +299,12 @@ paths:
                 type: string
                 example: 8b4989f6-8c31-12f9-1ae0-75b1da4142fc
                 description: The ID of the created resource group
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -318,6 +342,12 @@ paths:
                 type: object
                 example: {}
                 description: Empty object.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -347,6 +377,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Job'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -398,6 +434,12 @@ paths:
                 type: object
                 example: {}
                 description: Empty object.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -446,6 +488,12 @@ paths:
                 type: boolean
                 example: true
                 description: Parent has been updated or stayed the same.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -528,6 +576,12 @@ paths:
                         path:
                           type: string
                           example: Project Root/folder1
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: |
             Request errors.
@@ -574,6 +628,12 @@ paths:
                 type: object
                 example: {}
                 description: Empty object.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -612,6 +672,12 @@ paths:
                 example: d290f1ee-6c54-4b01-90e6-d701748f0853
                 format: uuid
                 description: The ID of inherited default host server
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: 'Request errors'
           content:
@@ -649,6 +715,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Job'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: |
             Common request errors.
@@ -691,6 +763,12 @@ paths:
             application/json:
               schema:
                 type: boolean
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
         430:
           description: |
             Common request errors.
