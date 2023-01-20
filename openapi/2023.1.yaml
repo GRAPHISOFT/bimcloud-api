@@ -212,6 +212,47 @@ paths:
         503:
           description: 'Server unavailable, retry the request later.'
 
+  /management/client/get-user:
+    get:
+      tags:
+        - PortalServer
+      description: |
+        Request a single user by ID.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: Token type and token
+        - in: query
+          name: user-id
+          schema:
+            type: string
+          description: The ID of the requested user
+          example: 211ce018-cce7-44e7-a139-9db45df65142
+      responses:
+        200:
+          description: Requested user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
   /management/client/get-resources-by-criterion:
     post:
       tags:
@@ -1267,6 +1308,140 @@ components:
           type: integer
           example: 484173
           description: The size of the requested resource in bytes.
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 211ce018-cce7-44e7-a139-9db45df65142
+          description: The ID of the requested user
+        type:
+          type: string
+          example: user
+          description: The type of the requested user
+        name:
+          type: string
+          example: a
+          pattern: ^(^$|[^\\x00-\\x1f\\:*?\"<>|]+)$
+          description: The name of the resource excluding path. Similar to filename.
+        username:
+          type: string
+          example: 'a'
+          description: The username of the requested user.
+        emailAddress:
+          type: string
+          example: 'a@a.com'
+          description: The email address associated with the requested user.
+        active:
+          type: boolean
+          example: true
+          description: Whether the requested user is active. An inactive user may not log in.
+        source:
+          type: object
+          properties:
+            directoryServiceId:
+              type: string
+              example: ""
+              format: uuid
+              description: | 
+                The ID of the directory service the requested user was synchronized from.
+                Empty if the user is not originated from a directory service.
+            id:
+              type: string
+              example: ""
+              description: |
+                The ID of the user on the source directory service.
+                Empty if the user is not originated from a directory service.
+            principal:
+              type: string
+              example: ""
+              description: |
+                The principal value of the user on the source directory service.
+                Empty if the user is not originated from a directory service.
+            directoryServiceType:
+              type: string
+              example: ""
+              description: |
+                The type of directory service the user originates from.
+                Empty if the user is not originated from a directory service.
+                The only possible value is `ldap`.
+            passwordLastSet:
+              type: number
+              example: 0
+              description: |
+                The timestamp of the last known set password of a user originating from
+                a directory service. Local users always stay with 0. The value is synchronized
+                from the directory service in regular intervals. During login, this value
+                is overwritten when the last known password hash doesn't match.
+        properties:
+          type: array
+          description: |
+            An array of objects describing further linked properties from a
+            directory service.
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+                example: someProperty
+                description: Mapped property name
+              value:
+                type: string
+                example: somePropertyValue
+                description: Mapped property value
+              linked:
+                type: boolean
+                example: true
+                description: Whether the mapped property is linked to the directory serivce
+        color:
+          type: object
+          description: An object describing the color of the user on the frontend.
+          properties:
+            r:
+              type: number
+              example: 0
+              description: Red channel
+            g:
+              type: number
+              example: 0
+              description: Green channel
+            b:
+              type: number
+              example: 0
+              description: Blue channel
+            a:
+              type: number
+              example: 0
+              description: Alpha channel
+        defaultPermissionSet:
+          type: string
+          example: ""
+          format: uuid
+          description: The id of the default permission set of the user. Empty if none.
+        enabledNotificationEmails:
+          type: boolean
+          example: true
+          description: Whether the user has the notification emails enabled.
+        lastOnline:
+          type: number
+          example: 0
+          description: Legacy.
+        enabledMessageNotification:
+          type: string
+          example: ON
+          description: Legacy.
+        enabledMessageNotificationEmails:
+          type: string
+          example: ON
+          description: Legacy.
+        wantedNotificationLevel:
+          type: string
+          example: everyNotifications
+          description: |
+            The level of notifications the user wants to get.
+            Possible values: `everyNotifications`, `onlyWarningNotifications`, `noNotifications`
 
   # RESPONSES & CO.
 
