@@ -1,6 +1,7 @@
 import requests
 from .errors import raise_bimcloud_manager_error, HttpError
-from .url import is_url, join_url
+from .url import is_url, join_url, add_params
+import webbrowser
 
 class ManagerApiRequestContext:
 	def __init__(self, user_id, access_token, refresh_token, access_token_exp, refresh_token_exp, token_type, client_id):
@@ -20,6 +21,16 @@ class ManagerApi:
 		self.manager_url = manager_url
 		self._api_root = join_url(manager_url, 'management/client')
 
+	def open_authorization_page(self, client_id, state):
+		url = add_params(join_url(self._api_root, 'oauth2', 'authorize'), { 'client_id': client_id, 'state': state })
+		webbrowser.open(url, new=0, autoraise=0)
+
+	def get_authorization_code_by_state(self, state):
+		url = join_url(self._api_root, 'oauth2', 'get-authorization-code-by-state')
+		response = requests.get(url, params={ 'state': state })
+		result = self.process_response(response)
+		return result['status'], result['code']
+
 	def get_token_by_password_grant(self, username, password, client_id):
 		request = {
 			'grant_type': 'password',
@@ -36,6 +47,17 @@ class ManagerApi:
 		request = {
 			'grant_type': 'refresh_token',
 			'refresh_token': refresh_token,
+			'client_id': client_id
+		}
+		url = join_url(self._api_root, 'oauth2', 'token')
+		response = requests.post(url, data=request, headers={ 'Content-Type': 'application/x-www-form-urlencoded' })
+		result = self.process_response(response)
+		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['refresh_token_exp'], result['token_type'], client_id)
+
+	def get_token_by_authorization_code_grant(self, authorization_code, client_id):
+		request = {
+			'grant_type': 'authorization_code',
+			'code': authorization_code,
 			'client_id': client_id
 		}
 		url = join_url(self._api_root, 'oauth2', 'token')
@@ -63,7 +85,7 @@ class ManagerApi:
 			raise ValueError('"resource_id"" expected.')
 
 		url = join_url(self._api_root, 'get-resource')
-		result = self.refresh_on_timeout(requests.get, auth_context, url, params={ 'resource-id': resource_id })
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'resource-id': resource_id })
 		return result
 
 	def get_resources_by_criterion(self, auth_context, criterion, options=None):
@@ -76,7 +98,7 @@ class ManagerApi:
 			for key in options:
 				params[key] = options[key]
 
-		result = self.refresh_on_timeout(requests.post, auth_context, url, params=params, json=criterion)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params=params, json=criterion)
 		assert isinstance(result, list), 'Result is not a list.'
 		return result
 
@@ -90,31 +112,31 @@ class ManagerApi:
 			'name': name,
 			'type': 'resourceGroup'
 		}
-		result = self.refresh_on_timeout(requests.post, auth_context, url, params={ 'parent-id': parent_id }, json=directory)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={ 'parent-id': parent_id }, json=directory)
 		assert isinstance(result, str), 'Result is not a string.'
 		return result
 
 	def delete_resource_group(self, auth_context, directory_id):
 		url = join_url(self._api_root, 'delete-resource-group')
-		result = self.refresh_on_timeout(requests.delete, auth_context, url, params={ 'resource-id': directory_id })
+		result = self.refresh_on_expiration(requests.delete, auth_context, url, params={ 'resource-id': directory_id })
 		return result
 
 	def delete_resources_by_id_list(self, auth_context, ids):
 		url = join_url(self._api_root, 'delete-resources-by-id-list')
-		result = self.refresh_on_timeout(requests.post, auth_context, url, json={ 'ids': ids })
+		result = self.refresh_on_expiration(requests.post, auth_context, url, json={ 'ids': ids })
 		return result
 
 	def delete_blob(self, auth_context, blob_id):
 		url = join_url(self._api_root, 'delete-blob')
-		self.refresh_on_timeout(requests.delete, auth_context, url, params={'resource-id': blob_id })
+		self.refresh_on_expiration(requests.delete, auth_context, url, params={'resource-id': blob_id })
 
 	def update_blob(self, auth_context, blob):
 		url = join_url(self._api_root, 'update-blob')
-		self.refresh_on_timeout(requests.put, auth_context, url, json=blob)
+		self.refresh_on_expiration(requests.put, auth_context, url, json=blob)
 
 	def update_blob_parent(self, auth_context, blob_id, body):
 		url = join_url(self._api_root, 'update-blob-parent')
-		self.refresh_on_timeout(requests.post, auth_context, url, params={ 'blob-id': blob_id }, json=body)
+		self.refresh_on_expiration(requests.post, auth_context, url, params={ 'blob-id': blob_id }, json=body)
 
 	def get_blob_changes_for_sync(self, auth_context, path, resource_group_id, from_revision):
 		url = join_url(self._api_root, 'get-blob-changes-for-sync')
@@ -123,23 +145,23 @@ class ManagerApi:
 			'resourceGroupId': resource_group_id,
 			'fromRevision': from_revision
 		}
-		result = self.refresh_on_timeout(requests.post, auth_context, url, json=request)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, json=request)
 		assert isinstance(result, object), 'Result is not an object.'
 		return result
 
 	def get_inherited_default_blob_server_id(self, auth_context, resource_group_id):
 		url = join_url(self._api_root, 'get-inherited-default-blob-server-id')
-		result = self.refresh_on_timeout(requests.get, auth_context, url, params={ 'resource-group-id': resource_group_id })
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'resource-group-id': resource_group_id })
 		return result
 
 	def get_job(self, auth_context, job_id):
 		url = join_url(self._api_root, 'get-job')
-		result = self.refresh_on_timeout(requests.get, auth_context, url, params={ 'job-id': job_id })
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'job-id': job_id })
 		return result
 
 	def abort_job(self, auth_context, job_id):
 		url = join_url(self._api_root, 'get-job')
-		result = self.refresh_on_timeout(requests.post, auth_context, url, params={ 'job-id': job_id })
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={ 'job-id': job_id })
 		return result
 
 	def get_ticket(self, auth_context, resource_id):
@@ -149,12 +171,17 @@ class ManagerApi:
 			'resources': [resource_id],
 			'format': 'base64'
 		}
-		result = self.refresh_on_timeout(requests.post, auth_context, url, False, json=request)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, False, json=request)
 		assert isinstance(result, bytes), 'Result is not a bytes.'
 		result = result.decode('utf-8')
 		return result
 
-	def refresh_on_timeout(self, req, auth_context, url, responseJson=True, **kwargs):
+	def get_user(self, auth_context, user_id):
+		url = join_url(self._api_root, 'get-user')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'user-id': user_id })
+		return result
+
+	def refresh_on_expiration(self, req, auth_context, url, responseJson=True, **kwargs):
 		try:
 			response = req(url, **kwargs, headers={ 'Authorization': f'Bearer {auth_context._access_token}' })
 			return self.process_response(response, json=responseJson)

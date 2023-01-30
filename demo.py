@@ -5,13 +5,11 @@ import lib
 def start():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('-m', '--manager', required=True, help='Url of BIMcloud Manager.')
-	parser.add_argument('-u', '--user', required=True, help='User name.')
-	parser.add_argument('-p', '--password', required=True, help='Password.')
 	parser.add_argument('-c', '--clientid', required=True, help='3rd party client id (arbitrary unique string, your domain for example).')
 	parser.add_argument('-d', '--debug', required=False, help='Debug exceptions.', action='store_true')
 	args = parser.parse_args()
 
-	wf = lib.Workflow(args.manager, args.user, args.password, args.clientid)
+	wf = lib.Workflow(args.manager, args.clientid)
 	try:
 		wf.run()
 	except Exception as err:

@@ -10,18 +10,18 @@ from .managerapi import ManagerApi
 from .blobserverapi import BlobServerApi
 from .url import join_url, parse_url
 from .errors import BIMcloudBlobServerError, BIMcloudManagerError
+import uuid
 
 CHARS = list(itertools.chain(string.ascii_lowercase, string.digits))
 PROJECT_ROOT = 'Project Root'
 PROJECT_ROOT_ID = 'projectRoot'
 
 class Workflow:
-	def __init__(self, manager_url, username, password, client_id):
+	def __init__(self, manager_url, client_id):
 		self._manager_api = ManagerApi(manager_url)
 
-		self.username = username
-		self._password = password
 		self.client_id = client_id
+		self.username= None
 
 		self._auth_context = None
 
@@ -38,7 +38,7 @@ class Workflow:
 
 	def run(self):
 		# WORKFLOW BEGIN
-		self.login()
+		self.login_sso()
 		try:
 			self.create_dirs()
 			self.upload_files()
@@ -50,13 +50,35 @@ class Workflow:
 			self.logout()
 		# WORKFLOW END
 
-	def login(self):
-		print(f'Login as {self.username} ...')
-		self._auth_context = self._manager_api.get_token_by_password_grant(self.username, self._password, self.client_id)
+	def login_sso(self):
+		print('Logging in ...')
+		state = uuid.uuid4()
+		self._manager_api.open_authorization_page(self.client_id, state)
+		time.sleep(0.2)
+
+		authorization_code = None
+		for i in range(300):
+			result = self._manager_api.get_authorization_code_by_state(state)
+			print (result)
+			if result[0] == 'succeeded':
+				authorization_code = result[1]
+				break
+			elif result[0] == 'pending':
+				print('Waiting for login ...')
+				time.sleep(1)
+
+		if authorization_code is None:
+			print('Login failed')
+			quit(1)
+
+		print('Exchanging authorization code for access & refresh token')
+		self._auth_context = self._manager_api.get_token_by_authorization_code_grant(authorization_code, self.client_id)
 		print(f'Received token type is "{self._auth_context.token_type}"')
 		print(f'Access token is going to expire at {Workflow.convert_timestamp(self._auth_context.access_token_exp)}')
 		print(f'Refresh token is going to expire at {Workflow.convert_timestamp(self._auth_context.refresh_token_exp)}')
 		print('Logged in.')
+
+		self.username = self._manager_api.get_user(self._auth_context, self._auth_context.user_id)['username']
 
 	def create_dirs(self):
 		print('Creating directories ...')
