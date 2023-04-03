@@ -84,7 +84,7 @@ paths:
           schema:
             type: string
           description: |
-            Origin url of the client, the same as the one provided at login.
+            Origin url of the client, the same as the one provided at login. After logging out, a redirect will be initiated to this url.
           example: https://example.com
           required: true
         - in: query
