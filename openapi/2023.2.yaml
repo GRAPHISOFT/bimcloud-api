@@ -10,7 +10,7 @@ info:
     BIMcloud API specifiaction.
     See the provided example for detailed information.
   version: "1.0.0"
-  title: BIMcloud API 2023.1 (alpha release)
+  title: BIMcloud API 2023.2 (alpha release)
 tags:
   - name: PortalServer
     description: |
@@ -59,6 +59,47 @@ paths:
           description: 'Initiates authentication flow with an HTML page for user credentials.'
         500:
           description: 'Code already generated for this state'
+          content:
+            application/json:
+              schema: 
+                $ref: '#/components/schemas/OauthError'
+  
+  /management/client/oauth2/logout:
+    get:
+      tags:
+        - PortalServer
+      description: Serves a HTML page, logs out the user.
+      parameters:
+        - in: query
+          name: state
+          schema:
+            type: string
+            minLength: 16
+            maxLength: 2048
+          description: Client specific state identification. Required minimum length 16, maximum length 2048.
+          example: d290f1ee-6c54-4b01-90e6-d701748f0851
+          required: true
+        - in: query
+          name: redirect_uri
+          schema:
+            type: string
+          description: |
+            Origin url of the client, the same as the one provided at login.
+          example: https://example.com
+          required: true
+        - in: query
+          name: client_id
+          schema:
+            type: string
+          description: Client specific identification
+          example: example.com
+          required: true
+
+      responses: 
+        200:
+          description: 'Initiates authentication flow with an HTML page for user credentials.'
+        400:
+          description: 'Some required parameters are missing.'
           content:
             application/json:
               schema: 
