@@ -503,6 +503,13 @@ paths:
             type: string
             example: Bearer <access_token>
           description: Token type and token
+        - in: query
+          name: blob-id
+          schema:
+            type: string
+            format: uuid
+          example: 4D7C7BB1-7AEF-4CD2-9146-0286561D6F85
+          description: The ID of the blob to update
       requestBody:
         description: Request body. Use one of its properties to modify parent by path or by id.
         content:
