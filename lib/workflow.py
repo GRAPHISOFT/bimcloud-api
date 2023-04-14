@@ -75,7 +75,6 @@ class Workflow:
 		self._auth_context = self._manager_api.get_token_by_authorization_code_grant(authorization_code, self.client_id)
 		print(f'Received token type is "{self._auth_context.token_type}"')
 		print(f'Access token is going to expire at {Workflow.convert_timestamp(self._auth_context.access_token_exp)}')
-		print(f'Refresh token is going to expire at {Workflow.convert_timestamp(self._auth_context.refresh_token_exp)}')
 		print('Logged in.')
 
 		self.username = self._manager_api.get_user(self._auth_context, self._auth_context.user_id)['username']

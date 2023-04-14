@@ -54,14 +54,14 @@ paths:
           example: example.com
           required: true
 
-      responses: 
+      responses:
         200:
           description: 'Initiates authentication flow with an HTML page for user credentials.'
         500:
           description: 'Code already generated for this state'
           content:
             application/json:
-              schema: 
+              schema:
                 $ref: '#/components/schemas/OauthError'
 
   /management/client/oauth2/get-authorization-code-by-state:
@@ -80,7 +80,7 @@ paths:
           example: d290f1ee-6c54-4b01-90e6-d701748f0851
           required: true
 
-      responses: 
+      responses:
         200:
           description: Authentication code generation status
           content:
@@ -93,7 +93,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/PortalServerError'
-  
+
   /management/client/oauth2/token:
     post:
       tags:
@@ -1352,7 +1352,7 @@ components:
               type: string
               example: ""
               format: uuid
-              description: | 
+              description: |
                 The ID of the directory service the requested user was synchronized from.
                 Empty if the user is not originated from a directory service.
             id:
@@ -1929,7 +1929,7 @@ components:
         error:
           type: string
           example: some_error
-          description: | 
+          description: |
             'Error name. Possible values: `access_denied`, `insufficient_scope`, `invalid_argument`, `invalid_client`'
             '`invalid_grant`, `invalid_request`, `invalid_scope`, `invalid_token`, `server_error`, `unauthorized_client`'
             '`unauthorized_request`, `unsupported_grant_type`, `unsupported_response_type`'
@@ -1986,10 +1986,6 @@ components:
           type: string
           example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25uZWN0aW9uSWQiOiI1OGIyMzVkYS0zMmRkLTE3OGItMjZiNi1lNjA0ODg1YzZmYWUiLCJ1c2VySWQiOiJ0dTEiLCJjbGllbnRJZCI6ImdyYXBoaXNvZnQuY29tIiwicGxhdGZvcm0iOiJ3ZWJVSSIsImV4cCI6MTY3MTAyMzM4MywianRpIjoiNGUzYTEzZTYtYWExNC01YWZhLTBlMjQtY2E2YThlNmRmNmNiIiwiaWF0IjoxNjcxMDIzMzczLCJ0eXBlIjoicmVmcmVzaCJ9.aBzGe3Ce_dmbON67Fs001vSU6H7yEcTlUHMBZHqq9bO0ryA0KKwjHGgZRLNL9S-qBw8obeFqWZ3IsqBGyneY7o--Qxa-jmS4iKBxqValYNOzIAQFVd9PKMWbkyKX204KIAPck5sGWZcRvyNocHluzrimmExhxhWTZ_Y_WU5r8pk
           description: The refresh token (JWT)
-        refresh_token_exp:
-          type: number
-          example: 1671023383
-          description: The expiration time of the refresh token (UNIX timestamp)
         token_type:
           type: string
           example: Bearer
@@ -1998,7 +1994,7 @@ components:
           type: string
           example: 8d597df5-1a4b-44c5-8f39-73173092947d
           description: The id of the user to whom the token was issued
-  
+
     GetAuthenticationCodeByStateResponse:
       type: object
       properties:

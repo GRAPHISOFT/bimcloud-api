@@ -4,12 +4,11 @@ from .url import is_url, join_url, add_params
 import webbrowser
 
 class ManagerApiRequestContext:
-	def __init__(self, user_id, access_token, refresh_token, access_token_exp, refresh_token_exp, token_type, client_id):
+	def __init__(self, user_id, access_token, refresh_token, access_token_exp, token_type, client_id):
 		self.user_id = user_id
 		self._access_token = access_token
 		self._refresh_token = refresh_token
 		self.access_token_exp = access_token_exp
-		self.refresh_token_exp = refresh_token_exp
 		self.token_type = token_type
 		self.client_id = client_id
 
@@ -41,7 +40,7 @@ class ManagerApi:
 		url = join_url(self._api_root, 'oauth2', 'token')
 		response = requests.post(url, data=request, headers={ 'Content-Type': 'application/x-www-form-urlencoded' })
 		result = self.process_response(response)
-		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['refresh_token_exp'], result['token_type'], client_id)
+		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['token_type'], client_id)
 
 	def get_token_by_refresh_token_grant(self, refresh_token, client_id):
 		request = {
@@ -52,7 +51,7 @@ class ManagerApi:
 		url = join_url(self._api_root, 'oauth2', 'token')
 		response = requests.post(url, data=request, headers={ 'Content-Type': 'application/x-www-form-urlencoded' })
 		result = self.process_response(response)
-		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['refresh_token_exp'], result['token_type'], client_id)
+		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['token_type'], client_id)
 
 	def get_token_by_authorization_code_grant(self, authorization_code, client_id):
 		request = {
@@ -63,7 +62,7 @@ class ManagerApi:
 		url = join_url(self._api_root, 'oauth2', 'token')
 		response = requests.post(url, data=request, headers={ 'Content-Type': 'application/x-www-form-urlencoded' })
 		result = self.process_response(response)
-		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['refresh_token_exp'], result['token_type'], client_id)
+		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['token_type'], client_id)
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):
 		if by_id is not None:
