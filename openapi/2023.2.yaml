@@ -53,6 +53,22 @@ paths:
           description: Client specific identification
           example: example.com
           required: true
+        - in: query
+          name: code_challenge_method
+          schema:
+            type: string
+          description: Optional parameter specifying the PKCE code challenge method. Possible values are `plain` or `S256`
+          example: S256
+          required: false
+        - in: query
+          name: code_challenge
+          schema:
+            type: string
+            minLength: 43
+            maxLength: 128
+          description: Optional parameter based on `code_challenge_method`. A string between 43 and 128 characters in length used as code verifier for PKCE.
+          example: ghltkgalxhuiwycbetrjgbordizrxxuyvbjeglkmhsdm
+          required: false
 
       responses:
         200:
@@ -2011,6 +2027,10 @@ components:
           type: string
           description: 'The refresh token. Only for `refresh_token` grant type.'
           example: eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb25uZWN0aW9uSWQiOiI1OGIyMzVkYS0zMmRkLTE3OGItMjZiNi1lNjA0ODg1YzZmYWUiLCJ1c2VySWQiOiJ0dTEiLCJjbGllbnRJZCI6ImdyYXBoaXNvZnQuY29tIiwicGxhdGZvcm0iOiJ3ZWJVSSIsImV4cCI6MTY3MTAyMzM4MywianRpIjoiNGUzYTEzZTYtYWExNC01YWZhLTBlMjQtY2E2YThlNmRmNmNiIiwiaWF0IjoxNjcxMDIzMzczLCJ0eXBlIjoicmVmcmVzaCJ9.aBzGe3Ce_dmbON67Fs001vSU6H7yEcTlUHMBZHqq9bO0ryA0KKwjHGgZRLNL9S-qBw8obeFqWZ3IsqBGyneY7o--Qxa-jmS4iKBxqValYNOzIAQFVd9PKMWbkyKX204KIAPck5sGWZcRvyNocHluzrimmExhxhWTZ_Y_WU5r8pk
+        code_verifier:
+          type: string
+          description: PKCE code verifier. Must be the same as the encoded string in code_challenge. Only for `authorization_code` grant type.
+          example: eaowlwoarpnxszyclnpkuckdynyfoyhsrvpfoavblct
 
     GetTokenResponse:
       type: object
