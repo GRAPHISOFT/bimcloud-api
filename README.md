@@ -45,9 +45,6 @@ optional arguments:
   -h, --help            show this help message and exit
   -m MANAGER, --manager MANAGER
                         Url of BIMcloud Manager.
-  -u USER, --user USER  User name.
-  -p PASSWORD, --password PASSWORD
-                        Password.
   -c CLIENTID, --clientid CLIENTID
                         3rd party client id (arbitrary unique string, your
                         domain for example).

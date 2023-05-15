@@ -9,6 +9,21 @@ def join_url(*parts):
 			joined += '/'
 	return joined
 
+def add_params(url, params):
+	result = url
+	if url[-1] == '/':
+		result = url[:-1]
+
+	first = True
+	for key, value in params.items():
+		if first:
+			result += f'?{key}={value}'
+			first = False
+		else:
+			result += f'&{key}={value}'
+
+	return result
+
 def is_url(url):
 	try:
 		result = urlparse(url)
