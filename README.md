@@ -4,7 +4,7 @@ This repository hosts BIMcloud API specification, a small library and an example
 
 # Specification
 
-Please refer to [openapi/2020.2.yaml](https://raw.githubusercontent.com/GRAPHISOFT/bimcloud-api/master/openapi/2020.2.yaml) specification. It's in a standard OpenAPI 3.0 (Swagger) format, that can be viewed by using any compatible viewer (VS Code for example, or paste the Github raw url to [the online Swagger viewer](https://petstore.swagger.io/)).
+Please refer to [openapi/2023.2.yaml](https://raw.githubusercontent.com/GRAPHISOFT/bimcloud-api/master/openapi/2023.2.yaml) specification. It's in a standard OpenAPI 3.0 (Swagger) format, that can be viewed by using any compatible viewer (VS Code for example, or paste the Github raw url to [the online Swagger viewer](https://petstore.swagger.io/)).
 
 # Demo
 
