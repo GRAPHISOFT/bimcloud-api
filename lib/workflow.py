@@ -17,12 +17,12 @@ PROJECT_ROOT = 'Project Root'
 PROJECT_ROOT_ID = 'projectRoot'
 
 class Workflow:
-	def __init__(self, manager_url, client_id):
+	def __init__(self, manager_url, client_id, username=None, password=None):
 		self._manager_api = ManagerApi(manager_url)
-
 		self.client_id = client_id
-		self.username= None
 
+		self.username = username
+		self.password = password
 		self._auth_context = None
 
 		self._root_dir_name = Workflow.to_unique('DEMO_RootDir')
@@ -38,17 +38,31 @@ class Workflow:
 
 	def run(self):
 		# WORKFLOW BEGIN
-		self.login_sso()
+		# self.login_sso()
+		self.login_pwd()
 		try:
-			self.create_dirs()
-			self.upload_files()
-			self.rename_file()
-			self.move_file()
-			self.locate_download_and_delete_files()
-			self.create_directory_tree_and_delete_recursively()
+			# self.create_dirs()
+			# self.upload_files()
+			# self.rename_file()
+			# self.move_file()
+			# self.locate_download_and_delete_files()
+			# self.create_directory_tree_and_delete_recursively()
+			self._manager_api.get_user(self._auth_context, self._auth_context.user_id )
 		finally:
 			self.logout()
 		# WORKFLOW END
+
+	def login_pwd(self):
+		print('Logging in ...')
+		self._auth_context = self._manager_api.get_token_by_password_grant(self.username, self.password, self.client_id)
+
+		if self._auth_context is None:
+			print('Login failed')
+			quit(1)
+		elif self._auth_context._access_token and self._auth_context._refresh_token:
+			print(f'Received token type is "{self._auth_context.token_type}"')
+			print(f'Access token is going to expire at {Workflow.convert_timestamp(self._auth_context.access_token_exp)}')
+			print('Logged in.')
 
 	def login_sso(self):
 		print('Logging in ...')
