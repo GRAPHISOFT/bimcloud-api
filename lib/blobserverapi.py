@@ -22,6 +22,13 @@ class BlobServerApi:
 		result = self.process_response(response)
 		return result['data']['id']
 
+	def get_session(self):
+		url = join_url(self.server_url, 'session-service/1.0/get-session')
+		response = requests.get(url, params={})
+		self.process_response(response)
+		result = self.process_response(response)
+		return result['data']
+
 	def close_session(self, session_id):
 		url = join_url(self.server_url, 'session-service/1.0/close-session')
 		response = requests.post(url, params={ 'session-id': session_id })

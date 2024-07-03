@@ -1,7 +1,8 @@
 import requests
+import webbrowser
+from .blobserverapi import BlobServerApi
 from .errors import raise_bimcloud_manager_error, HttpError
 from .url import is_url, join_url, add_params
-import webbrowser
 
 class ManagerApiRequestContext:
 	def __init__(self, user_id, access_token, refresh_token, access_token_exp, token_type, client_id):
@@ -19,6 +20,18 @@ class ManagerApi:
 
 		self.manager_url = manager_url
 		self._api_root = join_url(manager_url, 'management/client')
+
+	def create_session(self, username, password, client_id):
+		request = {
+			'username': username,
+			'password': password,
+			'client-id': client_id
+		}
+		url = join_url(self._api_root, 'create-session')
+		response = requests.post(url, json=request)
+		result = self.process_response(response)
+		# We can ignore expire-timeout for now. It will have effect on future versions of the API.
+		return result['user-id'], result['session-id']
 
 	def open_authorization_page(self, client_id, state):
 		url = add_params(join_url(self._api_root, 'oauth2', 'authorize'), { 'client_id': client_id, 'state': state })
@@ -63,6 +76,145 @@ class ManagerApi:
 		response = requests.post(url, data=request, headers={ 'Content-Type': 'application/x-www-form-urlencoded' })
 		result = self.process_response(response)
 		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['token_type'], client_id)
+
+	# 	get-backups-with-unique-resource
+	# 	get-backups-with-unique-resource-by-criterion
+
+	def get_ping(self, auth_context):
+		url = join_url(self.manager_url, 'ping')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_items_by_criterion(self, auth_context, scope=None, criterion=None, options=None):
+		url = join_url(self._api_root, 'get-backups-with-unique-resource-by-criterion?')
+		# url = join_url(self._api_root, 'get-' + scope + '-by-criterion')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def get_inherited_blob_revision_retention_policy(self, auth_context, resource_id):
+		url = join_url(self._api_root, 'get-inherited-blob-revision-retention-policy')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id})
+		return result
+
+	def get_inherited_resource_backup_schedulers(self, auth_context, resource_id):
+		url = join_url(self._api_root, 'get-inherited-resource-backup-schedulers')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id})
+		return result
+
+	def get_lazy_list_position_by_criterion(self, auth_context, resource_id):
+		url = join_url(self._api_root, 'get-lazy-list-position-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-id': resource_id, 'sort-by': 'id', 'sort-direction': 'asc'})
+		return result
+
+	def get_edition_status(self, auth_context):
+		url = join_url(self._api_root, 'get-edition-status')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_network_info(self, auth_context):
+		url = join_url(self._api_root, 'get-network-info')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_server_info(self, auth_context):
+		url = join_url(self.manager_url, 'get-server-info')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_webui_config(self, auth_context):
+		url = join_url(self.manager_url, 'get-webui-config')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_library_root_path(self, auth_context):
+		url = join_url(self._api_root, 'get-library-root-path')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_floating_features(self, auth_context):
+		url = join_url(self._api_root, 'get-floating-features')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_server_public_key(self, auth_context):
+		url = join_url(self._api_root, 'get-server-public-key')
+		response = requests.get(url, params={})
+		result = self.process_response(response, json=False)
+		return result
+
+	def get_company_logo(self, auth_context):
+		url = join_url(self._api_root, 'get-company-logo')
+		response = requests.get(url, params={})
+		result = self.process_response(response, json=False)
+		return result
+
+	def get_locale_config(self, auth_context):
+		url = join_url(self._api_root, 'get-locale-config')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_locale_by_id(self, auth_context, lang_id):
+		url = join_url(self._api_root, 'get-locale-by-id')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'lang-id': lang_id})
+		return result
+
+	def get_announcement(self, auth_context):
+		url = join_url(self._api_root, 'get-announcement')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_effective_permissions_by_criterion(self, auth_context, criterion=None):
+		#resource-type: authorizables, privileges, resources
+		url = join_url(self._api_root, 'get-effective-permissions-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-type': 'privileges'}, json=criterion)
+		return result	
+
+	def get_project_migration_data(self, auth_context, project_id):
+		url = join_url(self._api_root, 'get-project-migration-data')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'project_id': project_id})
+		return result
+
+	def get_access_control_entries_by_authorizable_id(self, auth_context, project_id):
+		url = join_url(self._api_root, 'get-access-control-entries-by-privilege-id')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'privilege-id': 'viewAccess'})
+		return result
+
+	def get_valid_change_data_resource_host_destinations(self, auth_context, data_id):
+		url = join_url(self._api_root, 'get-valid-change-data-resource-host-destinations')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'data-resource-id': data_id})
+		return result
+
+	def get_permission_mode(self, auth_context):
+		url = join_url(self._api_root, 'get-permission-mode')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={})
+		return result
+
+	def get_inherited_default_host_server(self, auth_context, resource_group_id):
+		url = join_url(self._api_root, 'get-inherited-default-host-server')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-group-id': resource_group_id})
+		return result
+
+	def get_inherited_default_blob_server_id(self, auth_context, resource_group_id):
+		url = join_url(self._api_root, 'get-inherited-default-blob-server-id')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-group-id': resource_group_id})
+		return result
+
+	# def get_backups_with_unique_resource(self, auth_context):
+	# 	url = join_url(self._api_root, 'get-backups-with-unique-resource')
+	# 	result = self.refresh_on_expiration(requests.post, auth_context, url, params={})
+	# 	return result
+
+	# filters = {'ids': [], 'from': 1646824536506, 'to': 1646824536506}
+	# criterion = { 'criterion': { '$eq': { '$actionId': '_server.log-entry.action.reserve' } } }
+	def get_log_entries_by(self, auth_context, scope, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entries-by-' + scope)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={**filters, **criterion})
+		return result
+
+	def get_log_entry_unique(self, auth_context, scope, id_type, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entry-unique-' + scope)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'id-type': id_type, **filters, **criterion})
+		return result
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):
 		if by_id is not None:
