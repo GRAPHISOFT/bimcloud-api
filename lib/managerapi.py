@@ -227,12 +227,73 @@ class ManagerApi:
 
 	# todo: /management/latest/set-floating-feature?
 
-	# todo: deprecated?
+	# note: deprecated?
 	def download_portal_server_logs(self, session_id, filepath):
 		url = join_url(self._api_root, 'download-portal-server-logs')
 		result = requests.get(url, params={'session-id': session_id})
 		with open (filepath, 'wb') as f:
 			f.write(result.content)
+
+	# note: deprecated?
+	def download_portal_server_database(self, session_id, filepath):
+		url = join_url(self._api_root, 'download-portal-server-database')
+		result = requests.get(url, params={'session-id': session_id})
+		with open (filepath, 'wb') as f:
+			f.write(result.content)
+
+	def get_server_license_info(self, auth_context):
+		url = join_url(self._api_root, 'ticket-generator/get-server-license-info')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def get_allocated_licenses(self, auth_context):
+		url = join_url(self._api_root, 'ticket-generator/get-allocated-licenses')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def get_allocated_licenses_by_criterion(self, auth_context, criterion=None):
+		url = join_url(self._api_root, 'ticket-generator/get-allocated-licenses-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json=criterion)
+		return result	
+
+	def count_licenses(self, auth_context):
+		url = join_url(self._api_root, 'ticket-generator/count-licenses')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def count_licenses(self, auth_context):
+		url = join_url(self._api_root, 'ticket-generator/count-licenses')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def count_versioned_licenses(self, auth_context):
+		url = join_url(self._api_root, 'ticket-generator/count-versioned-licenses')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def count_expiring_licenses(self, auth_context, days):
+		url = join_url(self._api_root, 'ticket-generator/count-expiring-licenses')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'remaining-days-treshold': days}, json={})
+		return result
+
+	def count_allocated_licenses_by_criterion(self, auth_context, criterion=None):
+		url = join_url(self._api_root, 'ticket-generator/count-allocated-licenses-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json=criterion)
+		return result	
+
+	def get_license_infos(self, auth_context):
+		url = join_url(self._api_root, 'ticket-generator/get-license-infos')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result	
+
+	# todo: /management/latest/ticket-generator/assign-license
+	# todo: /management/latest/ticket-generator/assign-versioned-license
+	# todo: /management/latest/ticket-generator/revoke-license
+
+	# todo: /management/latest/upload-data", _, y, "application/octet-stream
+	
+	# todo: management/latest/set-company-logo", n, r, "application/octet-stream
+
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):
 		if by_id is not None:
