@@ -19,6 +19,7 @@ PROJECT_ROOT_ID = 'projectRoot'
 class Workflow:
 	def __init__(self, manager_url, client_id, username=None, password=None):
 		self._manager_api = ManagerApi(manager_url)
+		self._blobserv_api = BlobServerApi(manager_url)
 		self.client_id = client_id
 
 		self.username = username
@@ -49,6 +50,12 @@ class Workflow:
 			# self.create_directory_tree_and_delete_recursively()
 			# test = self._manager_api.get_items_by_criterion(self._auth_context, 'users')
 			# test = self._manager_api.get_log_entry_unique(self._auth_context, 'projects')
+			# test = self._blobserv_api.get_session()
+			# test = self._manager_api.get_psession(self._auth_context)
+			session = self._manager_api.create_session(self.username, self.password, self.client_id)
+			test = self._manager_api.download_portal_server_logs(session[1], 'D:\\Projects\\logs.txt')
+			# test = self._manager_api.export_log_entries(self._auth_context, exp['export-id'], 'logs.txt')
+			# print (test)
 			# print(json.dumps(test, indent = 4))
 			# print(test)
 			# self._manager_api.get_user(self._auth_context, self._auth_context.user_id )

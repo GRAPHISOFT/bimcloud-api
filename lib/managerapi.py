@@ -204,8 +204,6 @@ class ManagerApi:
 	# 	result = self.refresh_on_expiration(requests.post, auth_context, url, params={})
 	# 	return result
 
-	# filters = {'ids': [], 'from': 1646824536506, 'to': 1646824536506}
-	# criterion = { 'criterion': { '$eq': { '$actionId': '_server.log-entry.action.reserve' } } }
 	def get_log_entries_by(self, auth_context, scope, filters={}, criterion={}):
 		url = join_url(self._api_root, 'get-log-entries-by-' + scope)
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={**filters, **criterion})
@@ -215,6 +213,26 @@ class ManagerApi:
 		url = join_url(self._api_root, 'get-log-entry-unique-' + scope)
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'id-type': id_type, **filters, **criterion})
 		return result
+
+	def create_log_entries_export_file(self, auth_context, id_type, filters={}, criterion={}):
+		url = join_url(self._api_root, 'create-log-entries-export-file')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'id-type': id_type, **filters, **criterion})
+		return result
+
+	# todo: where's the file?
+	#def export_log_entries(self, auth_context, export_id, filename):
+	#	url = join_url(self._api_root, 'export-log-entries')
+	#	result = self.refresh_on_expiration(requests.get, auth_context, url, params={'export-id': export_id, 'file-name': filename}, json={})
+	#	return result
+
+	# todo: /management/latest/set-floating-feature?
+
+	# todo: deprecated?
+	def download_portal_server_logs(self, session_id, filepath):
+		url = join_url(self._api_root, 'download-portal-server-logs')
+		result = requests.get(url, params={'session-id': session_id})
+		with open (filepath, 'wb') as f:
+			f.write(result.content)
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):
 		if by_id is not None:
