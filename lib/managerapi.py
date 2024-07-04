@@ -1,5 +1,8 @@
 import requests
 import webbrowser
+import tkinter as tk
+from tkinter import filedialog
+
 from .blobserverapi import BlobServerApi
 from .errors import raise_bimcloud_manager_error, HttpError
 from .url import is_url, join_url, add_params
@@ -291,9 +294,16 @@ class ManagerApi:
 	# todo: /management/latest/ticket-generator/revoke-license
 
 	# todo: /management/latest/upload-data", _, y, "application/octet-stream
-	
+
 	# todo: management/latest/set-company-logo", n, r, "application/octet-stream
 
+	def set_company_logo(self, session_id, mime_type):
+		tk.Tk().withdraw()
+		file_path = filedialog.askopenfilename()
+		with open (file_path, 'rb') as file:
+			url = join_url(self._api_root, 'set-company-logo')
+			result = requests.post(url, data=file,  params={'session-id': session_id, 'mime-type': mime_type}, headers={ 'Content-Type': 'application/octet-stream' })
+			return result	
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):
 		if by_id is not None:
