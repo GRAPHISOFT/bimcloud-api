@@ -49,7 +49,8 @@ class Workflow:
 			# self.locate_download_and_delete_files()
 			# self.create_directory_tree_and_delete_recursively()
 			# test = self._manager_api.send_email(self._auth_context)
-			test = self._manager_api.get_items_by_criterion(self._auth_context, 'jobs')
+			test = self._manager_api.get_local_model_servers_data(self._auth_context)
+			# test = self._manager_api.subscribe_to_resource_by_criterion(self._auth_context, {'$eq': { '$id': '67D2FDEC-19D7-42C3-84DA-08BD2F715B1C' }})
 			# test = self._manager_api.set_user_password(self._auth_context, '96f9360f-e74f-45bf-9ce8-9e950e4868cc', 'newpass', 'curpass')
 			# test = self._manager_api.get_log_entry_unique(self._auth_context, 'projects')
 			# test = self._blobserv_api.get_session()
@@ -57,6 +58,9 @@ class Workflow:
 			# test = self._manager_api.set_company_logo(session[1])
 			# test = self._manager_api.download_portal_server_database(session[1], 'D:\\Projects\\db.db')
 			# test = self._manager_api.export_log_entries(self._auth_context, exp['export-id'], 'logs.txt')
+			# immediate_parent_dir = self.find_immediate_parent_dir(PROJECT_ROOT)
+			# print (immediate_parent_dir['id'])
+			# test = self._manager_api.get_inherited_default_host_server(self._auth_context, 'B617069C-5D92-4A8D-9F80-7B70F2DF0817')
 			# print (test)
 			print(json.dumps(test, indent = 4))
 			# print(test)
@@ -348,6 +352,7 @@ class Workflow:
 			# to be able to accessed from different network locations.
 			# We should pick that one that we can access.
 			model_server_url = self.find_working_model_server_url(model_server)
+			print(model_server_url)
 			blob_server_api = BlobServerApi(model_server_url)
 
 			# Ticket is an authentication token for Model (Blob) Server.

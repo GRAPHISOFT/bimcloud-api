@@ -196,11 +196,6 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-group-id': resource_group_id})
 		return result
 
-	def get_inherited_default_blob_server_id(self, auth_context, resource_group_id):
-		url = join_url(self._api_root, 'get-inherited-default-blob-server-id')
-		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-group-id': resource_group_id})
-		return result
-
 	# def get_backups_with_unique_resource(self, auth_context):
 	# 	url = join_url(self._api_root, 'get-backups-with-unique-resource')
 	# 	result = self.refresh_on_expiration(requests.post, auth_context, url, params={})
@@ -354,6 +349,77 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': ids, 'subject': subject, 'message': message})
 		return result
 
+	# todo: /management/latest/import-authorizables
+	# todo: /management/latest/get-authorizable-position-by-criterion
+	# todo: /management/latest/get-inherited-default-library-upload-folder
+
+	def get_folder_size_data(self, auth_context, folder_id):
+		url = join_url(self._api_root, 'get-folder-size-data')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'folder-id': folder_id}, json={})
+		return result
+
+	# todo: management/latest/insert-change-notification-subscription
+	# todo: management/latest/subscribe-to-resources-by-criterion
+
+	# note: null?
+	def subscribe_to_resource_by_criterion(self, auth_context, criterion=None):
+		url = join_url(self._api_root, 'subscribe-to-resources-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'user-id': 'c615f63a-b4b3-4358-8608-1cdbd76aad73'}, json=criterion)
+		return result
+
+	# todo: /management/latest/delete-change-notification-subscription
+	# todo: /management/latest/unsubscribe-from-resources-by-criterion
+	# todo: /management/latest/remove-all-change-notification-subscriptions
+
+	def get_blob_server_ids(self, auth_context):
+		url = join_url(self._api_root, 'get-blob-server-ids')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	# todo: /management/latest/set-blob-server-ids
+	# todo: /management/latest/start-fixing-blob-server-consistency
+	# todo: /management/latest/start-model-server
+	# todo: /management/latest/stop-model-server
+	# todo: /management/latest/restart-model-server
+
+	# note: fail
+	def get_model_server_info(self, auth_context):
+		url = join_url(self._api_root, 'get-model-server-info')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'model-server-url': 'http://162.55.83.203:25001/'}, json={})
+		return result
+
+	def has_model_server_data(self, auth_context):
+		url = join_url(self._api_root, 'has-model-server-data')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'model-server-id': '9671af7f-2a80-9d1d-88ff-b3f1dbd8602f'}, json={})
+		return result
+
+	# todo: /management/latest/sync-model-server-resources-into-folder
+	def get_local_model_servers_data(self, auth_context):
+		url = join_url(self._api_root, 'get-local-model-servers-data')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	# todo: /management/latest/get-hosted-resources
+	# todo: /management/latest/wait-for-deferred-tasks
+
+	# todo: /management/latest/get-access-control-entries-by-resource-id
+	# todo: /management/latest/get-access-control-entries-by-authorizable-id
+	# todo: /management/latest/get-access-control-entries-by-privilege-id
+	# todo: /management/latest/get-access-control-entry-effective-targets
+	# todo: /management/latest/get-access-control-entry-effective-authorizables
+
+	# todo: /management/latest/get-directory-service-sync-statuses-by-directory-service-id
+
+	# todo: /management/latest/create-directory-service-preview
+	# todo: /management/latest/get-directory-service-preview-items
+	# todo: /management/latest/count-directory-service-preview-items
+	# todo: /management/latest/remove-directory-service-preview
+
+	# todo: /management/latest/test-directory-service-connection
+	# todo: /management/latest/get-directory-service-base-dns
+	# todo: /management/latest/synchronize-directory-service
+	# todo: /management/latest/delete-directory-service
+
 
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):
@@ -440,6 +506,7 @@ class ManagerApi:
 		assert isinstance(result, object), 'Result is not an object.'
 		return result
 
+	# note: null?
 	def get_inherited_default_blob_server_id(self, auth_context, resource_group_id):
 		url = join_url(self._api_root, 'get-inherited-default-blob-server-id')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'resource-group-id': resource_group_id })
