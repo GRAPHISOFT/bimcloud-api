@@ -295,15 +295,65 @@ class ManagerApi:
 
 	# todo: /management/latest/upload-data", _, y, "application/octet-stream
 
-	# todo: management/latest/set-company-logo", n, r, "application/octet-stream
-
 	def set_company_logo(self, session_id, mime_type):
 		tk.Tk().withdraw()
 		file_path = filedialog.askopenfilename()
 		with open (file_path, 'rb') as file:
 			url = join_url(self._api_root, 'set-company-logo')
 			result = requests.post(url, data=file,  params={'session-id': session_id, 'mime-type': mime_type}, headers={ 'Content-Type': 'application/octet-stream' })
-			return result	
+		return result	
+
+	# note: 404?
+	#def get_users_quota_info(self, auth_context):
+	#	url = join_url(self._api_root, 'get-users-quota-info')
+	#	result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+	#	return result	
+
+	# todo: /management/latest/resolve-path
+	# todo: /management/latest/upgrade
+	# todo: /management/latest/start-downgrade-process
+	# todo: /management/latest/cancel-downgrade-process
+	# todo: /management/latest/downgrade
+	# todo: /management/latest/check-manual-downgrade-step
+	# todo: /management/latest/check-auto-downgrade-ace-count
+	# todo: /management/latest/register-major-version
+	# todo: /management/latest/activate-server
+
+	# note: 404?
+	#def get_message_server(self, auth_context):
+	#	url = join_url(self._api_root, 'get-message-server')
+	#	result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+	#	return result
+
+	# todo: /management/latest/get-online-platforms-for-users-by-id-list
+
+	# todo: /management/latest/insert-bimcloud-project
+	# todo: /management/latest/insert-team
+	# todo: /management/latest/add-to-teams
+	# todo: /management/latest/remove-from-teams
+
+	# todo: /management/latest/get-user-by-username
+	# todo: /management/latest/contains-user-by-username
+	# todo: /management/latest/get-users-by-authorizable-ids
+
+	def set_user_password(self, auth_context, user_id, password, cur_password):
+		url = join_url(self._api_root, 'set-user-password')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'user-id': user_id}, json={'password': password, 'current-password': cur_password})
+		return result
+
+	# todo: /management/latest/set-user-photo
+	# todo: /management/latest/delete-user-photo
+	# todo: /management/latest/get-user-photo?
+
+	def reset_user_password(self, auth_context, user_name):
+		url = join_url(self._api_root, 'reset-user-password')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'username': user_name}, json={})
+		return result
+
+	# todo: /management/latest/send-email
+
+
+
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):
 		if by_id is not None:
