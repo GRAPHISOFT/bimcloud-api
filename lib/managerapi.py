@@ -89,9 +89,8 @@ class ManagerApi:
 		return result
 
 	def get_items_by_criterion(self, auth_context, scope=None, criterion=None, options=None):
-		url = join_url(self._api_root, 'get-backups-with-unique-resource-by-criterion?')
-		# url = join_url(self._api_root, 'get-' + scope + '-by-criterion')
-		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		url = join_url(self._api_root, 'get-' + scope + '-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={})
 		return result
 
 	def get_inherited_blob_revision_retention_policy(self, auth_context, resource_id):
@@ -350,8 +349,10 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'username': user_name}, json={})
 		return result
 
-	# todo: /management/latest/send-email
-
+	def send_email(self, auth_context, ids, subject, message):
+		url = join_url(self._api_root, 'send-email')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': ids, 'subject': subject, 'message': message})
+		return result
 
 
 
