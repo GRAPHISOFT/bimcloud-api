@@ -454,6 +454,21 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'target-resource-type': target_resource_type, 'permission-name': name}, json={})
 		return result
 
+	def get_permission_set_child_permission(self, auth_context, permission_set_id):
+		url = join_url(self._api_root, 'get-permission-set-child-permissions')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'permission-set-id': permission_set_id}, json={})
+		return result
+
+	def get_permission_category_child_permissions(self, auth_context, permission_category_id):
+		url = join_url(self._api_root, 'get-permission-category-child-permissions')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'permission-category-id': permission_category_id}, json={})
+		return result
+
+	def get_permission_categories(self, auth_context, target_resource_type):
+		url = join_url(self._api_root, 'get-permission-categories')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'target-resource-type': target_resource_type}, json={})
+		return result
+
 
 
 
