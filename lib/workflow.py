@@ -50,7 +50,7 @@ class Workflow:
 			# self.create_directory_tree_and_delete_recursively()
 			# test = self._manager_api.send_email(self._auth_context)
 			# test = self._manager_api.get_items_by_criterion(self._auth_context, 'privileges')
-			test = self._manager_api.get_permission_category_child_permissions(self._auth_context, 'externalContent')
+			test = self._manager_api.export_project(self._auth_context, '9092251A-F027-4F78-88AA-8C341A94B0E8')
 			# test = self._manager_api.subscribe_to_resource_by_criterion(self._auth_context, {'$eq': { '$id': '67D2FDEC-19D7-42C3-84DA-08BD2F715B1C' }})
 			# test = self._manager_api.set_user_password(self._auth_context, '96f9360f-e74f-45bf-9ce8-9e950e4868cc', 'newpass', 'curpass')
 			# test = self._manager_api.get_log_entry_unique(self._auth_context, 'projects')

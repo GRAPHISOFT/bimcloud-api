@@ -469,6 +469,12 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'target-resource-type': target_resource_type}, json={})
 		return result
 
+	def export_project(self, auth_context, project_id, auto_backup=False, man_backup=False):
+		url = join_url(self._api_root, 'export-project')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'project-id': project_id, 'url-root': self.manager_url, 'include-automatic-backups': auto_backup, 'include-manual-backups': man_backup}, json={})
+		return result
+
+
 
 
 
