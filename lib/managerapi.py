@@ -165,10 +165,10 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
-	def get_effective_permissions_by_criterion(self, auth_context, criterion=None):
+	def get_effective_permissions_by_criterion(self, auth_context, resource_type, criterion=None):
 		#resource-type: authorizables, privileges, resources
 		url = join_url(self._api_root, 'get-effective-permissions-by-criterion')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-type': 'privileges'}, json=criterion)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-type': resource_type}, json=criterion)
 		return result	
 
 	def get_project_migration_data(self, auth_context, project_id):
@@ -419,6 +419,41 @@ class ManagerApi:
 	# todo: /management/latest/get-directory-service-base-dns
 	# todo: /management/latest/synchronize-directory-service
 	# todo: /management/latest/delete-directory-service
+
+	# note: check
+	def export_library(self, auth_context, library_id, auto_backup=False, man_backup=False):
+		url = join_url(self._api_root, 'export-library')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'library-id': library_id, 'url-root': self.manager_url, 'include-automatic-backups': auto_backup, 'include-manual-backups': man_backup}, json={})
+		return result
+
+	# todo: /management/latest/import-library-get-url
+	# todo: /management/latest/import-library-as-new
+
+	def duplicate_library(self, auth_context, library_id, name):
+		url = join_url(self._api_root, 'duplicate-library')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'library-id': library_id, 'library-name': name}, json={})
+		return result
+
+	def get_parent_permission_category(self, auth_context, permission_id):
+		url = join_url(self._api_root, 'get-parent-permission-category')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'permission-id': permission_id}, json={})
+		return result
+
+	def get_parent_permission_sets(self, auth_context, permission_id):
+		url = join_url(self._api_root, 'get-parent-permission-sets')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'permission-id': permission_id}, json={})
+		return result
+
+	def get_permissions(self, auth_context, target_resource_type):
+		url = join_url(self._api_root, 'get-permissions')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'target-resource-type': target_resource_type}, json={})
+		return result
+
+	def get_permissions_by_name(self, auth_context, target_resource_type, name):
+		url = join_url(self._api_root, 'get-permissions-by-name')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'target-resource-type': target_resource_type, 'permission-name': name}, json={})
+		return result
+
 
 
 
