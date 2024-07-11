@@ -52,7 +52,7 @@ class Workflow:
 			# test = self._manager_api.get_resource_backups_by_criterion(self._auth_context, ['9092251A-F027-4F78-88AA-8C341A94B0E8',])
 			# auth = self._manager_api.get_token_by_password_grant(self.username, self.password, self.client_id)
 			# token = self._auth_context._refresh_token
-			test = self._manager_api.get_message_server(self._auth_context)
+			test = self._manager_api.get_user_by_username(self._auth_context, 'i.yurasov')
 			print(json.dumps(test, indent = 4))
 			# print(test)
 			# self._manager_api.get_user(self._auth_context, self._auth_context.user_id )

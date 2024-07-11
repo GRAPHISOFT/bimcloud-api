@@ -478,7 +478,13 @@ class ManagerApi:
 	# todo: /management/latest/add-to-teams
 	# todo: /management/latest/remove-from-teams
 
-	# todo: /management/latest/get-user-by-username
+	# todo: /management/latest/
+
+	def get_user_by_username(self, auth_context, username):
+		url = join_url(self._api_root, 'get-user-by-username')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'user-username': username}, json={})
+		return result
+		
 	# todo: /management/latest/contains-user-by-username
 	# todo: /management/latest/get-users-by-authorizable-ids
 
