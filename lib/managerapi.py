@@ -80,9 +80,6 @@ class ManagerApi:
 		result = self.process_response(response)
 		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['token_type'], client_id)
 
-	# 	get-backups-with-unique-resource
-	# 	get-backups-with-unique-resource-by-criterion
-
 	def get_ping(self, auth_context):
 		url = join_url(self.manager_url, 'ping')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
@@ -165,16 +162,23 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
+	# todo: /management/latest/get-effective-permissions
+
 	def get_effective_permissions_by_criterion(self, auth_context, resource_type, criterion=None):
 		#resource-type: authorizables, privileges, resources
 		url = join_url(self._api_root, 'get-effective-permissions-by-criterion')
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-type': resource_type}, json=criterion)
-		return result	
+		return result
+
+	# todo: /management/latest/get-effective-permissions-by-ids
 
 	def get_project_migration_data(self, auth_context, project_id):
 		url = join_url(self._api_root, 'get-project-migration-data')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'project_id': project_id})
 		return result
+
+	# todo: /management/latest/put-project-migration-data
+	# todo: /management/latest/change-data-resource-host
 
 	def get_access_control_entries_by_authorizable_id(self, auth_context, project_id):
 		url = join_url(self._api_root, 'get-access-control-entries-by-privilege-id')
@@ -186,6 +190,8 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'data-resource-id': data_id})
 		return result
 
+	# todo: /management/latest/send-test-email
+
 	def get_permission_mode(self, auth_context):
 		url = join_url(self._api_root, 'get-permission-mode')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={})
@@ -196,10 +202,53 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-group-id': resource_group_id})
 		return result
 
-	# def get_backups_with_unique_resource(self, auth_context):
-	# 	url = join_url(self._api_root, 'get-backups-with-unique-resource')
-	# 	result = self.refresh_on_expiration(requests.post, auth_context, url, params={})
-	# 	return result
+	# todo: /management/latest/set-floating-feature?
+
+	# todo: /management/latest/duplicate-folder
+	# todo: /management/latest/duplicate-blob
+	# todo: /management/latest/mount-unknown-data-resource-to-missing
+	# todo: /management/latest/mount-unknown-data-resource-as-new
+
+	# note: fail
+	def get_backup(self, auth_context, backup_id):
+		url = join_url(self._api_root, 'get-backup')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'backup-id': backup_id}, json={})
+		# result = requests.get(url, params={'session-id': session_id, 'backup-id': backup_id})
+		return result
+
+	def get_backups(self, auth_context):
+		url = join_url(self._api_root, 'get-backups')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	# note: fail
+	def get_backups_with_unique_resource(self, auth_context):
+		url = join_url(self._api_root, 'get-backups-with-unique-resource')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	# note: fail
+	def count_backups(self, auth_context):
+		url = join_url(self._api_root, 'count-backups')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	# note: fail
+	def get_backups_by_criterion(self, auth_context, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-backups-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={**filters, **criterion})
+		return result
+
+	# 	/management/latest/get-backups-with-unique-resource
+	# 	/management/latest/get-backups-with-unique-resource-by-criterion
+	# 	/management/latest/count-backups-by-criterion
+
+	def download_backup(self, session_id, resource_id, backup_id):
+		url = join_url(self._api_root, 'download-backup')
+		# result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id, 'backup-id': '9671af7f-2a80-9d1d-88ff-b3f1dbd8602f9092251A-F027-4F78-88AA-8C341A94B0E8_server.backup.format.bimprojectDC6DDE9A-55F1-454A-B14C-413F96711923'}, json={})
+		result = requests.get(url, params={ 'session-id': session_id, 'resource-id': resource_id, 'backup-id': backup_id})
+		with open("C:\\Users\\i.yurasov\\Desktop\\dev\\backup.BIMProject25", "wb") as file:
+			file.write(result.content)
 
 	def get_log_entries_by(self, auth_context, scope, filters={}, criterion={}):
 		url = join_url(self._api_root, 'get-log-entries-by-' + scope)
@@ -221,8 +270,6 @@ class ManagerApi:
 	#	url = join_url(self._api_root, 'export-log-entries')
 	#	result = self.refresh_on_expiration(requests.get, auth_context, url, params={'export-id': export_id, 'file-name': filename}, json={})
 	#	return result
-
-	# todo: /management/latest/set-floating-feature?
 
 	# note: deprecated?
 	def download_portal_server_logs(self, session_id, filepath):
@@ -561,7 +608,51 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'resourceId': resource_id, 'tagId': tag_id})
 		return result
 
+	def create_resource_backup(self, auth_context, resource_id, backup_type, name):
+		url = join_url(self._api_root, 'create-resource-backup')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-id': resource_id, 'backup-type': backup_type, 'backup-name': name}, json={})
+		return result
 
+	def keep_resource_backup(self, auth_context, resource_id, backup_id, backup_name):
+		url = join_url(self._api_root, 'keep-resource-backup')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-id': resource_id, 'backup-id': backup_id, 'backup-name': backup_name}, json={})
+		return result
+
+	def delete_resource_backup(self, auth_context, resource_id, backup_id):
+		url = join_url(self._api_root, 'delete-resource-backup')
+		result = self.refresh_on_expiration(requests.delete, auth_context, url, params={'resource-id': resource_id, 'backup-id': backup_id}, json={})
+		return result
+
+	def restore_resource_backup(self, auth_context, resource_id, backup_id):
+		url = join_url(self._api_root, 'restore-resource-backup')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-id': resource_id, 'backup-id': backup_id}, json={})
+		return result
+
+	def restore_resource_backup_as_new(self, auth_context, server_id, resource_id, backup_id, parent_id, name):
+		url = join_url(self._api_root, 'restore-resource-backup-as-new')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'model-server-id': server_id, 'resource-id': resource_id, 'backup-id': backup_id, 'resource-name': name, 'parent-id': parent_id}, json={})
+		return result
+
+	def rename_resource_backup(self, auth_context, resource_id, backup_id, name):
+		url = join_url(self._api_root, 'rename-resource-backup')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-id': resource_id, 'backup-id': backup_id, 'backup-name': name}, json={})
+		return result
+
+	def get_resource_backups_by_criterion(self, auth_context, resourcesIds, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-resource-backups-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': resourcesIds, **filters, **criterion})
+		return result
+
+	# todo: /management/latest/abort-job
+
+	# todo: /management/latest/gsid/create-gsid-user
+	# todo: /management/latest/gsid/send-connect-email
+	# todo: /management/latest/gsid/pending-gsid-connection-by-userid
+	# todo: /management/latest/gsid/global-license-usage
+	# todo: /management/latest/gsid/user-byol-enable
+	# todo: /management/latest/gsid/user-byol-disable
+	# todo: /management/latest/gsid/assign-user-global-license"
+	# todo: /management/latest/gsid/remove-user-global-license
 
 
 
