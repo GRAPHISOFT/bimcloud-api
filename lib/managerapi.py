@@ -504,6 +504,36 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={})
 		return result
 
+	# todo: /management/latest/insert-resource-backup-schedule
+	# todo: /management/latest/create-server-backup
+	# todo: /management/latest/cancel-server-backup
+
+	def get_parent_user_groups(self, auth_context, authorizable_id):
+		url = join_url(self._api_root, 'get-parent-user-groups')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'authorizable-id': authorizable_id}, json={})
+		return result
+
+	def get_user_group_child_users(self, auth_context, group_id):
+		url = join_url(self._api_root, 'get-user-group-child-users')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'user-group-id': group_id}, json={})
+		return result
+
+	def get_user_group_child_user_groups(self, auth_context, group_id):
+		url = join_url(self._api_root, 'get-user-group-child-user-groups')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'user-group-id': group_id}, json={})
+		return result
+
+	def add_to_user_groups(self, auth_context, membersIds, groupsIds):
+		url = join_url(self._api_root, 'add-to-user-groups')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'memberIds': membersIds, 'groupIds': groupsIds})
+		return result
+
+	def remove_from_user_groups(self, auth_context, membersIds, groupsIds):
+		url = join_url(self._api_root, 'remove-from-user-groups')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'memberIds': membersIds, 'groupIds': groupsIds})
+		return result
+
+
 
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):

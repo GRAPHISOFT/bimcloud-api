@@ -51,7 +51,7 @@ class Workflow:
 			# test = self._manager_api.send_email(self._auth_context)
 			# test = self._manager_api.get_items_by_criterion(self._auth_context, 'privileges')
 			# session = self._manager_api.create_session(self.username, self.password, self.client_id)
-			test = self._manager_api.force_logout_all_users_from_project(self._auth_context, '64A27409-41E7-4007-94FF-B2D022ACE75F')
+			test = self._manager_api.remove_from_user_groups(self._auth_context, ['c615f63a-b4b3-4358-8608-1cdbd76aad73'], ['535f8138-011c-4402-9732-f702422c73bb'])
 			# test = self._manager_api.subscribe_to_resource_by_criterion(self._auth_context, {'$eq': { '$id': '67D2FDEC-19D7-42C3-84DA-08BD2F715B1C' }})
 			# test = self._manager_api.set_user_password(self._auth_context, '96f9360f-e74f-45bf-9ce8-9e950e4868cc', 'newpass', 'curpass')
 			# test = self._manager_api.get_log_entry_unique(self._auth_context, 'projects')
@@ -63,7 +63,7 @@ class Workflow:
 			# print (immediate_parent_dir['id'])
 			# test = self._manager_api.get_inherited_default_host_server(self._auth_context, 'B617069C-5D92-4A8D-9F80-7B70F2DF0817')
 			# print (test)
-			# print(json.dumps(test, indent = 4))
+			print(json.dumps(test, indent = 4))
 			# print(test)
 			# self._manager_api.get_user(self._auth_context, self._auth_context.user_id )
 		finally:
