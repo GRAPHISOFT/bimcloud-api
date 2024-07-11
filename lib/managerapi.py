@@ -486,7 +486,16 @@ class ManagerApi:
 		return result
 		
 	# todo: /management/latest/contains-user-by-username
-	# todo: /management/latest/get-users-by-authorizable-ids
+
+	def contains_user_by_username(self, auth_context, username):
+		url = join_url(self._api_root, 'contains-user-by-username')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'user-username': username}, json={})
+		return result
+
+	def get_users_by_authorizable_ids(self, auth_context, authIds):
+		url = join_url(self._api_root, 'get-users-by-authorizable-ids')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'authorizable-ids': authIds}, json={})
+		return result
 
 	def set_user_password(self, auth_context, user_id, password, cur_password):
 		url = join_url(self._api_root, 'set-user-password')
@@ -502,7 +511,7 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': ids, 'subject': subject, 'message': message})
 		return result
 
-	# todo: /management/latest/import-authorizables
+	# todo: /management/latest/import-authorizables (users?)
 	# todo: /management/latest/get-authorizable-position-by-criterion
 	# todo: /management/latest/get-inherited-default-library-upload-folder
 
@@ -547,6 +556,7 @@ class ManagerApi:
 		return result
 
 	# todo: /management/latest/sync-model-server-resources-into-folder
+
 	def get_local_model_servers_data(self, auth_context):
 		url = join_url(self._api_root, 'get-local-model-servers-data')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
@@ -744,8 +754,6 @@ class ManagerApi:
 	# todo: /management/latest/gsid/user-byol-disable
 	# todo: /management/latest/gsid/assign-user-global-license"
 	# todo: /management/latest/gsid/remove-user-global-license
-
-
 
 	def get_resource(self, auth_context, by_path=None, by_id=None, try_get=False):
 		if by_id is not None:
