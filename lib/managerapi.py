@@ -474,7 +474,35 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'project-id': project_id, 'url-root': self.manager_url, 'include-automatic-backups': auto_backup, 'include-manual-backups': man_backup}, json={})
 		return result
 
+	def export_project_list(self, session_id, resource_group_id, filename):
+		url = join_url(self._api_root, 'export-project-list')
+		result = requests.get(url, params={'session-id': session_id, 'resource-group-id': resource_group_id, 'file-name': filename}, json={})
+		with open ('C:\\Users\\i.yurasov\\Desktop\\dev\\' + filename, 'wb') as file:
+			file.write(result.content)
 
+	# todo: /management/latest/import-project-get-url
+	# todo: /management/latest/import-project
+	# todo: /management/latest/import-project-as-new
+
+	def duplicate_project(self, auth_context, project_id, name):
+		url = join_url(self._api_root, 'duplicate-project')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'project-id': project_id, 'project-name': name}, json={})
+		return result
+
+	def force_logout_user_from_project(self, auth_context, project_id, user_id):
+		url = join_url(self._api_root, 'force-logout-user-from-project')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'project-id': project_id, 'user-id': user_id}, json={})
+		return result
+
+	def force_logout_all_users_from_project(self, auth_context, project_id):
+		url = join_url(self._api_root, 'force-logout-all-users-from-project')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'project-id': project_id}, json={})
+		return result
+
+	def force_logout_all_users_from_projects(self, auth_context):
+		url = join_url(self._api_root, 'force-logout-all-users-from-projects')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={})
+		return result
 
 
 
