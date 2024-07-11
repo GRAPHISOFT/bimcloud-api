@@ -36,6 +36,16 @@ class ManagerApi:
 		# We can ignore expire-timeout for now. It will have effect on future versions of the API.
 		return result['user-id'], result['session-id']
 
+	def close_session(self, session_id):
+		url = join_url(self._api_root, 'close-session')
+		result = requests.post(url, params={'session-id': session_id})
+		return result
+
+	def ping_session(self, session_id):
+		url = join_url(self._api_root, 'ping-session')
+		result = requests.post(url, params={'session-id': session_id})
+		return result
+
 	def open_authorization_page(self, client_id, state):
 		url = add_params(join_url(self._api_root, 'oauth2', 'authorize'), { 'client_id': client_id, 'state': state })
 		webbrowser.open(url, new=0, autoraise=0)
@@ -80,23 +90,39 @@ class ManagerApi:
 		result = self.process_response(response)
 		return ManagerApiRequestContext(result['user_id'], result['access_token'], result['refresh_token'], result['access_token_exp'], result['token_type'], client_id)
 
-	def get_ping(self, auth_context):
-		url = join_url(self.manager_url, 'ping')
-		result = self.refresh_on_expiration(requests.get, auth_context, url)
-		return result
+	# CUSTOM
 
 	def get_items_by_criterion(self, auth_context, scope=None, criterion=None, options=None):
 		url = join_url(self._api_root, 'get-' + scope + '-by-criterion')
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={})
 		return result
 
-	def get_inherited_blob_revision_retention_policy(self, auth_context, resource_id):
-		url = join_url(self._api_root, 'get-inherited-blob-revision-retention-policy')
-		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id})
+	def get_log_entries_by(self, auth_context, scope, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entries-by-' + scope)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={**filters, **criterion})
+		return result
+
+	def get_log_entry_unique(self, auth_context, scope, id_type, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entry-unique-' + scope)
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'id-type': id_type, **filters, **criterion})
+		return result
+
+	# DEFAULT
+
+	# todo: /management/latest/insert-
+
+	def delete_resources_by_id_list(self, auth_context, ids):
+		url = join_url(self._api_root, 'delete-resources-by-id-list')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, json={ 'ids': ids })
 		return result
 
 	def get_inherited_resource_backup_schedulers(self, auth_context, resource_id):
 		url = join_url(self._api_root, 'get-inherited-resource-backup-schedulers')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id})
+		return result
+
+	def get_inherited_blob_revision_retention_policy(self, auth_context, resource_id):
+		url = join_url(self._api_root, 'get-inherited-blob-revision-retention-policy')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id})
 		return result
 
@@ -105,8 +131,29 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-id': resource_id, 'sort-by': 'id', 'sort-direction': 'asc'})
 		return result
 
+	# todo: /management/latest/gsid/authenticate-and-connect
+	# todo: /management/latest/gsid/pending-gsid-connection?
+
+	# test
+	def set_user_password_with_token(self, auth_context, token, password):
+		url = join_url(self._api_root, 'set-user-password-with-token')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'token': token}, json={'password': password})
+		return result
+
+	def reset_user_password(self, auth_context, user_name):
+		url = join_url(self._api_root, 'reset-user-password')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'username': user_name}, json={})
+		return result
+
+	# todo: /management/latest/ensure-session-has-license
+
 	def get_edition_status(self, auth_context):
 		url = join_url(self._api_root, 'get-edition-status')
+		result = self.refresh_on_expiration(requests.get, auth_context, url)
+		return result
+
+	def get_ping(self, auth_context):
+		url = join_url(self.manager_url, 'ping')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
@@ -162,10 +209,17 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
-	# todo: /management/latest/get-effective-permissions
+	# todo: /management/latest/begin-transaction
+	# todo: /management/latest/commit
+	# todo: /management/latest/abort
+
+	def get_effective_permissions(self, auth_context, resource_type, resource_id, authorizable_id):
+		#resource-type: authorizables, privileges, resources
+		url = join_url(self._api_root, 'get-effective-permissions')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-type': resource_type, 'resource-id': resource_id, 'authorizable-id': authorizable_id}, json={})
+		return result
 
 	def get_effective_permissions_by_criterion(self, auth_context, resource_type, criterion=None):
-		#resource-type: authorizables, privileges, resources
 		url = join_url(self._api_root, 'get-effective-permissions-by-criterion')
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'resource-type': resource_type}, json=criterion)
 		return result
@@ -197,12 +251,31 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={})
 		return result
 
+	def force_logout_user_from_project(self, auth_context, project_id, user_id):
+		url = join_url(self._api_root, 'force-logout-user-from-project')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'project-id': project_id, 'user-id': user_id}, json={})
+		return result
+
+	def force_logout_all_users_from_project(self, auth_context, project_id):
+		url = join_url(self._api_root, 'force-logout-all-users-from-project')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'project-id': project_id}, json={})
+		return result
+
+	def force_logout_all_users_from_projects(self, auth_context):
+		url = join_url(self._api_root, 'force-logout-all-users-from-projects')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={})
+		return result
+
 	def get_inherited_default_host_server(self, auth_context, resource_group_id):
 		url = join_url(self._api_root, 'get-inherited-default-host-server')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-group-id': resource_group_id})
 		return result
 
-	# todo: /management/latest/set-floating-feature?
+	# note: null?
+	def get_inherited_default_blob_server_id(self, auth_context, resource_group_id):
+		url = join_url(self._api_root, 'get-inherited-default-blob-server-id')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'resource-group-id': resource_group_id })
+		return result
 
 	# todo: /management/latest/duplicate-folder
 	# todo: /management/latest/duplicate-blob
@@ -245,21 +318,39 @@ class ManagerApi:
 
 	def download_backup(self, session_id, resource_id, backup_id):
 		url = join_url(self._api_root, 'download-backup')
-		# result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id, 'backup-id': '9671af7f-2a80-9d1d-88ff-b3f1dbd8602f9092251A-F027-4F78-88AA-8C341A94B0E8_server.backup.format.bimprojectDC6DDE9A-55F1-454A-B14C-413F96711923'}, json={})
+		# result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id, 'backup-id': backup_id}, json={})
 		result = requests.get(url, params={ 'session-id': session_id, 'resource-id': resource_id, 'backup-id': backup_id})
 		with open("C:\\Users\\i.yurasov\\Desktop\\dev\\backup.BIMProject25", "wb") as file:
 			file.write(result.content)
 
-	def get_log_entries_by(self, auth_context, scope, filters={}, criterion={}):
-		url = join_url(self._api_root, 'get-log-entries-by-' + scope)
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={**filters, **criterion})
+	def get_log_entries_by_users(self, auth_context, usersIds, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entries-by-users')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': usersIds, **filters, **criterion})
 		return result
 
-	def get_log_entry_unique(self, auth_context, scope, id_type, filters={}, criterion={}):
-		url = join_url(self._api_root, 'get-log-entry-unique-' + scope)
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'id-type': id_type, **filters, **criterion})
+	def get_log_entries_by_projects(self, auth_context, projectsIds, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entries-by-projects')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': projectsIds, **filters, **criterion})
 		return result
 
+	def get_log_entries_by_servers(self, auth_context, serversIds, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entries-by-servers')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': serversIds, **filters, **criterion})
+		return result
+
+	# note: inputs
+	def get_log_entry_unique_users(self, auth_context, usersIds, id_type, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entry-unique-users')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': usersIds, 'id-type': id_type, **filters, **criterion})
+		return result
+
+	# note: inputs
+	def get_log_entry_unique_projects(self, auth_context, projectsIds, id_type, filters={}, criterion={}):
+		url = join_url(self._api_root, 'get-log-entry-unique-users')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'ids': projectsIds,  'id-type': id_type, **filters, **criterion})
+		return result
+
+	# note: inputs
 	def create_log_entries_export_file(self, auth_context, id_type, filters={}, criterion={}):
 		url = join_url(self._api_root, 'create-log-entries-export-file')
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'id-type': id_type, **filters, **criterion})
@@ -270,6 +361,8 @@ class ManagerApi:
 	#	url = join_url(self._api_root, 'export-log-entries')
 	#	result = self.refresh_on_expiration(requests.get, auth_context, url, params={'export-id': export_id, 'file-name': filename}, json={})
 	#	return result
+
+	# todo: /management/latest/set-floating-feature?
 
 	# note: deprecated?
 	def download_portal_server_logs(self, session_id, filepath):
@@ -285,6 +378,18 @@ class ManagerApi:
 		with open (filepath, 'wb') as f:
 			f.write(result.content)
 
+	def get_ticket(self, auth_context, resource_id):
+		url = join_url(self._api_root, 'ticket-generator/get-ticket')
+		request = {
+			'type': 'freeTicket',
+			'resources': [resource_id],
+			'format': 'base64'
+		}
+		result = self.refresh_on_expiration(requests.post, auth_context, url, False, json=request)
+		assert isinstance(result, bytes), 'Result is not a bytes.'
+		result = result.decode('utf-8')
+		return result
+
 	def get_server_license_info(self, auth_context):
 		url = join_url(self._api_root, 'ticket-generator/get-server-license-info')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
@@ -295,15 +400,24 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
 		return result
 
-	def get_allocated_licenses_by_criterion(self, auth_context, criterion=None):
-		url = join_url(self._api_root, 'ticket-generator/get-allocated-licenses-by-criterion')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json=criterion)
-		return result	
-
-	def count_licenses(self, auth_context):
-		url = join_url(self._api_root, 'ticket-generator/count-licenses')
+	def count_allocated_licenses(self, auth_context):
+		url = join_url(self._api_root, 'ticket-generator/count-allocated-licenses')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
 		return result
+
+	def get_allocated_licenses_by_criterion(self, auth_context, filters=None, criterion=None):
+		url = join_url(self._api_root, 'ticket-generator/get-allocated-licenses-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={**filters, **criterion})
+		return result	
+
+	def count_allocated_licenses_by_criterion(self, auth_context, filters=None, criterion=None):
+		url = join_url(self._api_root, 'ticket-generator/count-allocated-licenses-by-criterion')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={**filters, **criterion})
+		return result
+
+	# todo: /management/latest/ticket-generator/assign-license
+	# todo: /management/latest/ticket-generator/assign-versioned-license
+	# todo: /management/latest/ticket-generator/revoke-license
 
 	def count_licenses(self, auth_context):
 		url = join_url(self._api_root, 'ticket-generator/count-licenses')
@@ -315,24 +429,15 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
 		return result
 
+	def get_license_infos(self, auth_context):
+		url = join_url(self._api_root, 'ticket-generator/get-license-infos')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
 	def count_expiring_licenses(self, auth_context, days):
 		url = join_url(self._api_root, 'ticket-generator/count-expiring-licenses')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'remaining-days-treshold': days}, json={})
 		return result
-
-	def count_allocated_licenses_by_criterion(self, auth_context, criterion=None):
-		url = join_url(self._api_root, 'ticket-generator/count-allocated-licenses-by-criterion')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json=criterion)
-		return result	
-
-	def get_license_infos(self, auth_context):
-		url = join_url(self._api_root, 'ticket-generator/get-license-infos')
-		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
-		return result	
-
-	# todo: /management/latest/ticket-generator/assign-license
-	# todo: /management/latest/ticket-generator/assign-versioned-license
-	# todo: /management/latest/ticket-generator/revoke-license
 
 	# todo: /management/latest/upload-data", _, y, "application/octet-stream
 
@@ -361,10 +466,10 @@ class ManagerApi:
 	# todo: /management/latest/activate-server
 
 	# note: 404?
-	#def get_message_server(self, auth_context):
-	#	url = join_url(self._api_root, 'get-message-server')
-	#	result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
-	#	return result
+	def get_message_server(self, auth_context):
+		url = join_url(self._api_root, 'get-message-server')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
 
 	# todo: /management/latest/get-online-platforms-for-users-by-id-list
 
@@ -385,11 +490,6 @@ class ManagerApi:
 	# todo: /management/latest/set-user-photo
 	# todo: /management/latest/delete-user-photo
 	# todo: /management/latest/get-user-photo?
-
-	def reset_user_password(self, auth_context, user_name):
-		url = join_url(self._api_root, 'reset-user-password')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'username': user_name}, json={})
-		return result
 
 	def send_email(self, auth_context, ids, subject, message):
 		url = join_url(self._api_root, 'send-email')
@@ -534,21 +634,6 @@ class ManagerApi:
 	def duplicate_project(self, auth_context, project_id, name):
 		url = join_url(self._api_root, 'duplicate-project')
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'project-id': project_id, 'project-name': name}, json={})
-		return result
-
-	def force_logout_user_from_project(self, auth_context, project_id, user_id):
-		url = join_url(self._api_root, 'force-logout-user-from-project')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'project-id': project_id, 'user-id': user_id}, json={})
-		return result
-
-	def force_logout_all_users_from_project(self, auth_context, project_id):
-		url = join_url(self._api_root, 'force-logout-all-users-from-project')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={'project-id': project_id}, json={})
-		return result
-
-	def force_logout_all_users_from_projects(self, auth_context):
-		url = join_url(self._api_root, 'force-logout-all-users-from-projects')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={})
 		return result
 
 	# todo: /management/latest/insert-resource-backup-schedule
@@ -712,11 +797,6 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.delete, auth_context, url, params={ 'resource-id': directory_id })
 		return result
 
-	def delete_resources_by_id_list(self, auth_context, ids):
-		url = join_url(self._api_root, 'delete-resources-by-id-list')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, json={ 'ids': ids })
-		return result
-
 	def delete_blob(self, auth_context, blob_id):
 		url = join_url(self._api_root, 'delete-blob')
 		self.refresh_on_expiration(requests.delete, auth_context, url, params={'resource-id': blob_id })
@@ -740,12 +820,6 @@ class ManagerApi:
 		assert isinstance(result, object), 'Result is not an object.'
 		return result
 
-	# note: null?
-	def get_inherited_default_blob_server_id(self, auth_context, resource_group_id):
-		url = join_url(self._api_root, 'get-inherited-default-blob-server-id')
-		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'resource-group-id': resource_group_id })
-		return result
-
 	def get_job(self, auth_context, job_id):
 		url = join_url(self._api_root, 'get-job')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'job-id': job_id })
@@ -754,18 +828,6 @@ class ManagerApi:
 	def abort_job(self, auth_context, job_id):
 		url = join_url(self._api_root, 'get-job')
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={ 'job-id': job_id })
-		return result
-
-	def get_ticket(self, auth_context, resource_id):
-		url = join_url(self._api_root, 'ticket-generator/get-ticket')
-		request = {
-			'type': 'freeTicket',
-			'resources': [resource_id],
-			'format': 'base64'
-		}
-		result = self.refresh_on_expiration(requests.post, auth_context, url, False, json=request)
-		assert isinstance(result, bytes), 'Result is not a bytes.'
-		result = result.decode('utf-8')
 		return result
 
 	def get_user(self, auth_context, user_id):
