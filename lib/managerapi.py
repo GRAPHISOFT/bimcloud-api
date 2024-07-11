@@ -533,6 +533,35 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'memberIds': membersIds, 'groupIds': groupsIds})
 		return result
 
+	# todo: /management/latest/delete-notifications-by-id-list
+
+	def insert_private_tag(self, auth_context, name, color, tag_type='tag'):
+		url = join_url(self._api_root, 'insert-private-tag')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'name': name, 'color': color, 'type': tag_type})
+		return result
+
+	# todo: input parameters
+	#def update_private_tag(self, auth_context, tag_id, name, color, type='tag'):
+	#	url = join_url(self._api_root, 'update-private-tag')
+	#	result = self.refresh_on_expiration(requests.post, auth_context, url, params={'tagId': '7cb708ef-129b-446d-dff7-d7290082877f'}, json={})
+	#	return result
+
+	def remove_all_tags(self, auth_context):
+		url = join_url(self._api_root, 'remove-all-tags')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={})
+		return result
+
+	def assign_private_tag(self, auth_context, resource_id, tag_id):
+		url = join_url(self._api_root, 'assign-private-tag')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'resourceId': resource_id, 'tagId': tag_id})
+		return result
+
+	def unassign_private_tag(self, auth_context, resource_id, tag_id):
+		url = join_url(self._api_root, 'unassign-private-tag')
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params={}, json={'resourceId': resource_id, 'tagId': tag_id})
+		return result
+
+
 
 
 
