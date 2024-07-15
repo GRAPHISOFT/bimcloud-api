@@ -148,31 +148,55 @@ class ManagerApi:
 	# todo: /management/latest/ensure-session-has-license
 
 	def get_edition_status(self, auth_context):
+		""" Retrieves information about downgrading process
+        	Returns:
+				dict
+		"""
 		url = join_url(self._api_root, 'get-edition-status')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
 	def get_ping(self, auth_context):
+		""" Pings server in the network
+        	Returns:
+				dict
+		"""
 		url = join_url(self.manager_url, 'ping')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
 	def get_network_info(self, auth_context):
+		""" Retrieves hostname, port and ip address of the bimcloud server
+        	Returns:
+				list
+		"""
 		url = join_url(self._api_root, 'get-network-info')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
 	def get_server_info(self, auth_context):
+		""" Retrieves a full information about running bimcloud
+        	Returns:
+				dict
+		"""
 		url = join_url(self.manager_url, 'get-server-info')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
 	def get_webui_config(self, auth_context):
+		""" Retrieves configuration settings for manager UI
+        	Returns:
+				dict
+		"""
 		url = join_url(self.manager_url, 'get-webui-config')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
 	def get_library_root_path(self, auth_context):
+		""" Retrieves root path for the library folder
+        	Returns:
+				dict
+		"""
 		url = join_url(self._api_root, 'get-library-root-path')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
@@ -183,23 +207,41 @@ class ManagerApi:
 		return result
 
 	def get_server_public_key(self, auth_context):
+		""" Retrieves server public key
+        	Returns:
+				byte string
+		"""	
 		url = join_url(self._api_root, 'get-server-public-key')
 		response = requests.get(url, params={})
 		result = self.process_response(response, json=False)
 		return result
 
 	def get_company_logo(self, auth_context):
+		""" Grabs company logo image if exists
+        	Returns:
+				binary
+		"""	
 		url = join_url(self._api_root, 'get-company-logo')
 		response = requests.get(url, params={})
 		result = self.process_response(response, json=False)
 		return result
 
 	def get_locale_config(self, auth_context):
+		""" Retrieves available locales
+        	Returns:
+				dict
+		"""	
 		url = join_url(self._api_root, 'get-locale-config')
 		result = self.refresh_on_expiration(requests.get, auth_context, url)
 		return result
 
 	def get_locale_by_id(self, auth_context, lang_id):
+		""" Retrieves all localisation texts for the given locale
+			Parameters:
+				lang_id (string):		# localisation key (en, it, uk...)
+        	Returns:
+				dict
+		"""	
 		url = join_url(self._api_root, 'get-locale-by-id')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'lang-id': lang_id})
 		return result
@@ -545,19 +587,29 @@ class ManagerApi:
 	# todo: /management/latest/restart-model-server
 
 	# note: fail
-	def get_model_server_info(self, auth_context):
+	def get_model_server_info(self, auth_context, http_addres):
 		url = join_url(self._api_root, 'get-model-server-info')
-		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'model-server-url': 'http://162.55.83.203:25001/'}, json={})
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'model-server-url': http_addres}, json={})
 		return result
 
-	def has_model_server_data(self, auth_context):
+	def has_model_server_data(self, auth_context, server_id):
+		""" Retrieves data status for the chosen server
+			Parameters:
+				server_id (str)		# uuid of the model server
+        	Returns:
+				dict
+		"""
 		url = join_url(self._api_root, 'has-model-server-data')
-		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'model-server-id': '9671af7f-2a80-9d1d-88ff-b3f1dbd8602f'}, json={})
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'model-server-id': server_id}, json={})
 		return result
 
 	# todo: /management/latest/sync-model-server-resources-into-folder
 
 	def get_local_model_servers_data(self, auth_context):
+		""" Retrieves information about local server
+        	Returns:
+				dict
+		"""
 		url = join_url(self._api_root, 'get-local-model-servers-data')
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
 		return result
