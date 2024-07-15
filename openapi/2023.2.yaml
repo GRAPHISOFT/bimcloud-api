@@ -69,6 +69,14 @@ paths:
           description: Optional parameter based on `code_challenge_method`. A string between 43 and 128 characters in length used as code verifier for PKCE.
           example: ghltkgalxhuiwycbetrjgbordizrxxuyvbjeglkmhsdm
           required: false
+        - in: query
+          name: username
+          schema:
+            type: string
+          description: |
+            Optional parameter for prefilling the username field in the login form.
+            If provided, the username field will be pre-filled with the provided value.
+          required: false
 
       responses:
         200:
