@@ -105,6 +105,21 @@ class BlobServerApi:
 		self.process_response(response, json=False)
 		return response
 
+	#todo: /blob-store-service/1.0/get-blob?
+	#todo: /blob-store-service/1.0/get-blob-history
+	#todo: /blob-store-service/1.0/get-blob-contents?
+	#todo: /blob-store-service/1.0/get-blob-contents-at?
+	#todo: /blob-store-service/1.0/get-pending-uploads
+	#todo: /blob-store-service/1.0/get-pending-batch-uploads
+
+	#todo: /get-job-status
+
+	#todo: /blob-store-service/1.0/management/restore-blob
+	#todo: /blob-store-service/1.0/management/restore-blob-as
+	#todo: /blob-store-service/1.0/management/restore-blobs
+	#todo: /blob-store-service/1.0/management/restore-blobs-as
+	#todo: /blob-store-service/1.0/get-blob-content-revisions?
+
 	@staticmethod
 	def process_response(response, json=True):
 		# ok, status_code, reason, 430: error-code, error-message

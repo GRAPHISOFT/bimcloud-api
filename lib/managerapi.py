@@ -115,8 +115,16 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id})
 		return result
 
+	# todo: management/latest/save-remote-logs?client-type=ui
 
+	# todo: /management/latest/add-to-
+	# todo: /management/latest/remove-from-
+	# todo: /management/latest/get-
+	# todo: /management/latest/contains-
+	# todo: /management/latest/count-
 	# todo: /management/latest/insert-
+	# todo: /management/latest/update-
+	# todo: /management/latest/delete-
 
 	def monitoring_status(self, auth_context):
 		""" Returns status of bimcloud metrics.
