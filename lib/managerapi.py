@@ -2,6 +2,7 @@ import requests
 import webbrowser
 import tkinter as tk
 from tkinter import filedialog
+from datetime import datetime, timedelta
 
 from .blobserverapi import BlobServerApi
 from .errors import raise_bimcloud_manager_error, HttpError
@@ -109,11 +110,120 @@ class ManagerApi:
 
 	# DEFAULT
 
+	def get_inherited_resource_backup_schedulers(self, auth_context, resource_id):
+		url = join_url(self._api_root, 'get-inherited-resource-backup-schedulers')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'resource-id': resource_id})
+		return result
+
+
 	# todo: /management/latest/insert-
 
-	def delete_resources_by_id_list(self, auth_context, ids):
-		url = join_url(self._api_root, 'delete-resources-by-id-list')
-		result = self.refresh_on_expiration(requests.post, auth_context, url, json={ 'ids': ids })
+	def monitoring_status(self, auth_context):
+		""" Returns status of bimcloud metrics.
+        	Returns:
+				str: unavailable / enabled
+		"""
+		url = join_url(self._api_root, 'monitoring/status')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def monitoring_metric_levels(self, auth_context):
+		""" Returns all available metric levels.
+        	Returns:
+				list
+		"""
+		url = join_url(self._api_root, 'monitoring/metric-levels')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def monitoring_known_metric_definitions(self, auth_context):
+		""" Returns all potential metric types
+        	Returns:
+				dict
+		"""
+		url = join_url(self._api_root, 'monitoring/known-metric-definitions')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def monitoring_stored_namespaces(self, auth_context):
+		""" Returns active namespace for this bimcloud.
+        	Returns:
+				list
+		"""
+		url = join_url(self._api_root, 'monitoring/stored-namespaces')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def monitoring_stored_metric_definitions(self, auth_context):
+		""" Returns stored named metric types.
+        	Returns:
+				dict
+		"""
+		url = join_url(self._api_root, 'monitoring/stored-metric-definitions')
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def monitoring_metric_bounds(self, auth_context, metric, namespace='portalServer'):
+		""" Returns range bounds for the chosen metric.
+        	Returns:
+				dict
+		"""
+		url = join_url(self._api_root, 'monitoring/metric-bounds/' + namespace + '/' + metric)
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def monitoring_has_metric(self, auth_context, metric, namespace='portalServer'):
+		""" Checks whether required metrics exist.
+        	Returns:
+				boolean
+		"""
+		url = join_url(self._api_root, 'monitoring/has-metrics/' + namespace + '/' + metric)
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
+		return result
+
+	def monitoring_metrics(self, auth_context, metric, namespace='portalServer', _from=60, _to=0, level=0):
+		""" Retrieves timestamp & values of the chosen metrics and time period.
+			Applicable metrics:
+				portalServer/machine.totalMemory
+				portalServer/machine.freeMemory
+				portalServer/machine.cpuUsagePercent
+				portalServer/api.requestsPerSec
+				portalServer/api.requestThroughoutPerSec
+				portalServer/api.responseThroughoutPerSec
+				portalServer/app.users
+				portalServer/app.projects
+				portalServer/app.activeUsers
+				portalServer/app.activeProjects
+				portalServer/disk.totalDataSize
+				portalServer/disk.freeDataSize
+				# for additional ones see monitoring_known_metric_definitions() method
+        	Returns:
+				dict
+		"""
+		now = datetime.now()
+		time_from = int((now - timedelta(seconds=_from)).timestamp() * 1000)
+		time_till = int((now - timedelta(seconds=_to)).timestamp() * 1000)
+
+		url = join_url(self._api_root, 'monitoring/metrics/' + namespace + '/' + metric + '/' + str(level))
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'from': time_from, 'to': time_till}, json={})
+		return result
+
+	def monitoring_last_metrics(self, auth_context, metric, namespace='portalServer', count=1, level=0):
+		""" Retrieves timestamp & values of the chosen metrics.
+        	Returns:
+				dict
+		"""
+		url = join_url(self._api_root, 'monitoring/last-metrics/' + namespace + '/' + metric + '/' + str(level))
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={'count': count}, json={})
+		return result
+
+	def monitoring_last_metric(self, auth_context, metric, namespace='portalServer', level=0):
+		""" Retrieves latest timestamp & values of the chosen metrics.
+        	Returns:
+				dict
+		"""
+		url = join_url(self._api_root, 'monitoring/last-metric/' + namespace + '/' + metric + '/' + str(level))
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params={}, json={})
 		return result
 
 	def get_inherited_resource_backup_schedulers(self, auth_context, resource_id):
