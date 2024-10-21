@@ -50,8 +50,14 @@ class Workflow:
 			# self.create_directory_tree_and_delete_recursively()
 			# test = dir(ManagerApi)
 			# test = self._manager_api.monitoring_metrics(self._auth_context, 'machine.cpuUsagePercent')
-			test = self._manager_api.get_items_by_criterion(self._auth_context, 'jobs')
-			print(json.dumps(test, indent = 4))
+			# test = self._manager_api.set_user_photo(self._auth_context, 'c615f63a-b4b3-4358-8608-1cdbd76aad73', 'image/jpg')
+			# test = self._manager_api.set_user_photo(self._auth_context, 'image/jpg')
+			# test = self._manager_api.set_user_photo(session[1], 'c615f63a-b4b3-4358-8608-1cdbd76aad73', 'image/png')
+			# test = self._manager_api.set_user_photo(session[1], 'image/png')
+			# test = self._manager_api.delete_user_photo(self._auth_context, 'c615f63a-b4b3-4358-8608-1cdbd76aad73')
+			# print(json.dumps(test, indent = 4))
+			# with open("C:\\Users\\i.yurasov\\Desktop\\dev\\ava.png", 'wb') as file:
+			# 	file.write(test.content)
 			# print(test)
 			# self._manager_api.get_user(self._auth_context, self._auth_context.user_id )
 		finally:

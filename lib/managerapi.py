@@ -663,8 +663,33 @@ class ManagerApi:
 		return result
 
 	# todo: /management/latest/set-user-photo
-	# todo: /management/latest/delete-user-photo
-	# todo: /management/latest/get-user-photo?
+
+	def get_user_photo(self, session_id, user_id):
+		""" Grab user photo image if exists
+        	Returns:
+				binary
+		"""	
+		url = join_url(self._api_root, 'get-user-photo')
+		response = requests.get(url, params={'session-id': session_id, 'user-id': user_id})
+		result = self.process_response(response, json=False)
+		return result
+
+	def delete_user_photo(self, auth_context, user_id):
+		""" Delete user photo image if exists
+		"""	
+		url = join_url(self._api_root, 'delete-user-photo')
+		result = self.refresh_on_expiration(requests.delete, auth_context, url, params={'user-id': user_id}, json={})
+		return result
+
+	def set_user_photo(self, session_id, user_id, mime_type):
+		""" Set user photo image with the given extension
+		"""	
+		tk.Tk().withdraw()
+		file_path = filedialog.askopenfilename()
+		with open (file_path, 'rb') as file:
+			url = join_url(self._api_root, 'set-user-photo')
+			result = requests.post(url, data=file,  params={'session-id': session_id, 'user-id': user_id}, headers={'Content-Type': mime_type})
+		return result	
 
 	def send_email(self, auth_context, ids, subject, message):
 		url = join_url(self._api_root, 'send-email')
