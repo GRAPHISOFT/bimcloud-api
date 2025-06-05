@@ -54,7 +54,7 @@ class Workflow:
 		print('Logging in ...')
 		state = uuid.uuid4()
 		self._manager_api.open_authorization_page(self.client_id, state)
-		time.sleep(0.2)
+		time.sleep(1)
 
 		authorization_code = None
 		for i in range(300):
