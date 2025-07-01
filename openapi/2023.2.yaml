@@ -201,7 +201,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
       requestBody:
         content:
           application/json:
@@ -248,7 +248,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: resource-id
           schema:
@@ -289,7 +289,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: user-id
           schema:
@@ -330,7 +330,27 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
+        - in: query
+          name: sortBy
+          schema:
+            $ref: '#/components/schemas/SortBy'
+          required: false
+        - in: query
+          name: sortDirection
+          schema:
+            $ref: '#/components/schemas/SortDirection'
+          required: false
+        - in: query
+          name: skip
+          schema:
+            $ref: '#/components/schemas/Skip'
+          required: false
+        - in: query
+          name: limit
+          schema:
+            $ref: '#/components/schemas/Limit'
+          required: false
       requestBody:
         description: The criterion object
         content:
@@ -373,7 +393,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: parent-id
           schema:
@@ -432,7 +452,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: resource-id
           schema:
@@ -475,7 +495,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
       responses:
         200:
           description: Job of type *destroyResources* representing the on-giong operation to delete resources.
@@ -510,7 +530,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
       requestBody:
         description: Blob data
         content:
@@ -567,7 +587,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: blob-id
           schema:
@@ -635,7 +655,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
       requestBody:
         description: |
           Use either resourceGroupId or path as a parameter but sending both is not necessary.
@@ -725,7 +745,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: resource-id
           schema:
@@ -735,12 +755,6 @@ paths:
       responses:
         200:
           description: Successful delete-blob request
-          content:
-            application/json:
-              schema:
-                type: object
-                example: {}
-                description: Empty object.
         401:
           description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
           content:
@@ -768,7 +782,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: resource-group-id
           schema:
@@ -814,7 +828,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: job-id
           schema:
@@ -859,7 +873,7 @@ paths:
           schema:
             type: string
             example: Bearer <access_token>
-          description: Token type and token
+          description: OAuth bearer token
         - in: query
           name: job-id
           schema:
@@ -888,6 +902,280 @@ paths:
 
             Only meaningful error code there is 6 (EntityNotFoundError) which means Job has been removed the system entirely.
             If a job completed or failed, it will stay in the database for a few minutes, but eventually it will get deleted for good.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  # BACKUP
+
+  /management/client/get-resource-backups-by-criterion:
+    post:
+      tags:
+        - PortalServer
+      description: |
+        Requests an array of resources that match the supplied criterion object
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: sortBy
+          schema:
+            $ref: '#/components/schemas/SortBy'
+          required: false
+        - in: query
+          name: sortDirection
+          schema:
+            $ref: '#/components/schemas/SortDirection'
+          required: false
+        - in: query
+          name: skip
+          schema:
+            $ref: '#/components/schemas/Skip'
+          required: false
+        - in: query
+          name: limit
+          schema:
+            $ref: '#/components/schemas/Limit'
+          required: false
+      requestBody:
+        description: The criterion object
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+                  description: An array of the project or library ids to get backups for.
+                criterion:
+                  $ref: '#/components/schemas/CriterionObject'
+                  required: false
+                  description: |
+                    Optional parameter to filter the results by a criterion object.
+                    If not provided, all backups for the specified ids will be returned.
+      responses:
+        200:
+          description: Successful get-resource request
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                    $ref: '#/components/schemas/ResourceBackup'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/download-backup:
+    get:
+      tags:
+        - PortalServer
+      description: |
+        Downloads a resource backup.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: backup-id
+          schema:
+            type: string
+            description: The ID of the resource backup to download
+        - in: query
+          name: resource-id
+          schema:
+            type: string
+            description: Owner resource id of the resource backup
+      responses:
+        200:
+          description: Binary data stream.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+                example: <binary data>
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/delete-project:
+    delete:
+      tags:
+        - PortalServer
+      description: |
+        Deletes a project from the resource tree by ID.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: resource-id
+          schema:
+            type: string
+          description: The ID of the project to be deleted.
+          example: 33E36B98-2758-4C17-83E5-69E93B8B87CB
+      responses:
+        200:
+          description: Delete project request was successful.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/import-project-get-url:
+    get:
+      tags:
+          - PortalServer
+      description: Initiates a snapshot upload and returns a URL to upload the snapshot to.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: model-server-id
+          schema:
+            type: string
+            description: The ID of the Model Server to upload the snapshot to.
+        - in: query
+          name: parent-id
+          schema:
+            type: string
+            description: Parent folder ID to upload the snapshot token.
+        - in: query
+          name: url-root
+          schema:
+            type: string
+            description: The URL root of the BIMcloud Manager
+            example: http://localhost:22000
+      responses:
+        200:
+          description: Urls.
+          content:
+            application/json:
+              schema:
+                properties:
+                  url:
+                    type: string
+                    description: The relative Model Server URL to upload the snapshot to.
+                    example: /upload?par1=value1
+                  absoluteUrl:
+                    type: string
+                    description: The absolute Model Server URL to upload the snapshot to.
+                    example: http://localhost:22001/upload?par1=value1
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/import-project-as-new:
+    post:
+      tags:
+          - PortalServer
+      description: Put the uploaded snapshot to resource tree as a new project.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: model-server-id
+          schema:
+            type: string
+            description: The ID of the Model Server to upload the snapshot to.
+        - in: query
+          name: file-uri
+          schema:
+            type: string
+            description: Uploaded snapshot file url.
+        - in: query
+          name: parent-id
+          schema:
+            type: string
+            description: Parent folder ID to upload the snapshot token.
+        - in: query
+          name: project-name
+          schema:
+            type: string
+            description: The name of the project to create.
+      responses:
+        200:
+          description: Import job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
           content:
             application/json:
               schema:
@@ -1517,6 +1805,27 @@ components:
 
   # RESPONSES & CO.
 
+    SortBy:
+      type: string
+      description: Optional parameter to specify the field to sort by
+      example: name
+
+    SortDirection:
+      type: string
+      enum: [asc, desc]
+      description: Optional parameter to specify the sort direction. Default is `asc`.
+      example: asc
+
+    Skip:
+      type: integer
+      description: Optional parameter to specify the number of items to skip in the result set. Default is 0.
+      example: 0
+
+    Limit:
+      type: integer
+      description: Optional parameter to specify the maximum number of items to return. Default is 5000.
+      example: 5000
+
     CriterionObject:
       type: object
       description: |
@@ -1945,8 +2254,6 @@ components:
                   example: AccessControlTicketExpired
                   description: The internal name of the error thrown. See the description of error-code for details.
 
-    # PS ERRORS
-
     PortalServerError:
       type: object
       properties:
@@ -2075,3 +2382,49 @@ components:
           type: string
           description: 'The authorization code generated or `null`, if pending'
           example: 8d597df5-1a4b-44c5-8f39-73173092947d
+
+    # Backups
+
+    ResourceBackup:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The ID of the resource backup
+          nullable: true
+        $time:
+          type: number
+          description: Creating time of the backup in JS epoch. If <=0, the backup is in progress or pending.
+        $backupFileName:
+          type: string
+        $serverId:
+          type: string
+        $name:
+          type: string
+        $fileSize:
+          type: number
+          nullable: true
+        $resourceId:
+          type: string
+          description: The ID of the resource that this backup belongs to.
+        $resourceName:
+          type: string
+          description: The name of the resource that this backup belongs to.
+          nullable: true
+        $resourcePath:
+          type: string
+          description: The path of the resource that this backup belongs to.
+          nullable: true
+        $resourceType:
+          type: string
+          enum: [project, library]
+          description: The type of the resource that this backup belongs to.
+        $formatId:
+          type: string
+          enum: [_server.backup.format.bimproject, _server.backup.format.bimlibrary, _server.backup.format.pln-automatic]
+          description: The format of the resource backup. Teamwork project, library or PLN.
+          nullable: true
+        $statusId:
+          type: string
+          enum: [_server.backup.status.done, _server.backup.status.pending]
+          nullable: true

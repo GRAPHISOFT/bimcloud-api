@@ -102,6 +102,20 @@ class ManagerApi:
 		assert isinstance(result, list), 'Result is not a list.'
 		return result
 
+	def get_resource_backups_by_criterion(self, auth_context, criterion, options=None):
+		if criterion is None:
+			raise ValueError('"criterion"" expected.')
+
+		url = join_url(self._api_root, 'get-resource-backups-by-criterion')
+		params = {}
+		if isinstance(options, dict):
+			for key in options:
+				params[key] = options[key]
+
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params=params, json=criterion, verify=self._safe)
+		assert isinstance(result, list), 'Result is not a list.'
+		return result
+
 	def get_resource_by_criterion(self, auth_context, criterion, options=None):
 		result = self.get_resources_by_criterion(auth_context, criterion, options)
 		return result[0] if result else None
@@ -129,6 +143,10 @@ class ManagerApi:
 	def delete_blob(self, auth_context, blob_id):
 		url = join_url(self._api_root, 'delete-blob')
 		self.refresh_on_expiration(requests.delete, auth_context, url, params={'resource-id': blob_id }, verify=self._safe)
+
+	def delete_project(self, auth_context, project_id):
+		url = join_url(self._api_root, 'delete-project')
+		self.refresh_on_expiration(requests.delete, auth_context, url, params={'resource-id': project_id }, verify=self._safe)
 
 	def update_blob(self, auth_context, blob):
 		url = join_url(self._api_root, 'update-blob')
@@ -171,7 +189,7 @@ class ManagerApi:
 			'resources': [resource_id],
 			'format': 'base64'
 		}
-		result = self.refresh_on_expiration(requests.post, auth_context, url, False, json=request, verify=self._safe)
+		result = (self.refresh_on_expiration(requests.post, auth_context, url, False, json=request, verify=self._safe)).content
 		assert isinstance(result, bytes), 'Result is not a bytes.'
 		result = result.decode('utf-8')
 		return result
@@ -181,9 +199,46 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.get, auth_context, url, params={ 'user-id': user_id }, verify=self._safe)
 		return result
 
+	def download_backup(self, auth_context, backup_id, resource_id):
+		url = join_url(self._api_root, 'download-backup')
+		response = self.refresh_on_expiration(
+			requests.get,
+			auth_context,
+			url,
+			False,
+			params={
+				'backup-id': backup_id,
+				'resource-id': resource_id
+			},
+			verify=self._safe,
+			stream=True
+		)
+		return response
+
+	def import_project_get_url(self, auth_context,  model_server_id, parent_id):
+		url = join_url(self._api_root, 'import-project-get-url')
+		params = {
+			'model-server-id': model_server_id,
+			'parent-id': parent_id,
+			'url-root': self.manager_url
+		}
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params=params, verify=self._safe)
+		return result
+
+	def import_project_as_new(self, auth_context, model_server_id, parent_id, file_uri, project_name):
+		url = join_url(self._api_root, 'import-project-as-new')
+		params = {
+			'model-server-id': model_server_id,
+			'parent-id': parent_id,
+			'file-uri': file_uri,
+			'project-name': project_name
+		}
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params=params, verify=self._safe)
+		return result
+
 	def refresh_on_expiration(self, req, auth_context, url, responseJson=True, **kwargs):
 		try:
-			response = req(url, **kwargs, headers={ 'Authorization': f'Bearer {auth_context._access_token}' })
+			response = req(url, headers={ 'Authorization': f'Bearer {auth_context._access_token}' }, **kwargs)
 			return self.process_response(response, json=responseJson)
 		except HttpError as e:
 			if e.status_code == 401:
@@ -202,7 +257,7 @@ class ManagerApi:
 		has_content = response.content is not None and len(response.content)
 		if response.ok:
 			if has_content:
-				return response.json() if json else response.content
+				return response.json() if json else response
 			else:
 				return None
 		if response.status_code == 430:
