@@ -1,8 +1,10 @@
 import datetime
+from email.utils import unquote
 import random
 import string
 import itertools
 import os
+import tempfile
 import requests
 import time
 import json
@@ -11,17 +13,20 @@ from .blobserverapi import BlobServerApi
 from .url import join_url, parse_url
 from .errors import BIMcloudBlobServerError, BIMcloudManagerError
 import uuid
+from urllib.parse import unquote, urlparse
 
 CHARS = list(itertools.chain(string.ascii_lowercase, string.digits))
 PROJECT_ROOT = 'Project Root'
 PROJECT_ROOT_ID = 'projectRoot'
 
 class Workflow:
-	def __init__(self, manager_url, client_id):
+	def __init__(self, manager_url, client_id, un_pw=None, temp_dir=None):
 		self._manager_api = ManagerApi(manager_url)
 
 		self.client_id = client_id
-		self.username= None
+		self.username = None
+		self._un_pw = un_pw
+		self._temp_dir = temp_dir if temp_dir else os.path.join(tempfile.gettempdir(), Workflow.to_unique('bimcloud_temp'))
 
 		self._auth_context = None
 
@@ -38,7 +43,7 @@ class Workflow:
 
 	def run(self):
 		# WORKFLOW BEGIN
-		self.login_sso()
+		self.login()
 		try:
 			self.create_dirs()
 			self.upload_files()
@@ -46,12 +51,22 @@ class Workflow:
 			self.move_file()
 			self.locate_download_and_delete_files()
 			self.create_directory_tree_and_delete_recursively()
+			self.find_a_snapshot_download_import_then_delete()
 		finally:
 			self.logout()
 		# WORKFLOW END
 
+	def login(self):
+		if self._un_pw is None:
+			self.login_sso()
+		else:
+			print('Logging in with user name and password ...')
+			self._auth_context = self._manager_api.get_token_by_password_grant(*self._un_pw, self.client_id)
+			self.username = self._manager_api.get_user(self._auth_context, self._auth_context.user_id)['username']
+			print('Logged in.')
+
 	def login_sso(self):
-		print('Logging in ...')
+		print('Logging in with SSO ...')
 		state = uuid.uuid4()
 		self._manager_api.open_authorization_page(self.client_id, state)
 		time.sleep(1)
@@ -124,10 +139,11 @@ class Workflow:
 		configured_blob_server_id = \
 			self._manager_api.get_inherited_default_blob_server_id(
 				self._auth_context,
-				immediate_parent_dir['id'])
+				immediate_parent_dir['id']
+			)
 
 		# Blob Server is a role of a Model Server, basically they are the same thing:
-		model_server = self._manager_api.get_resource_by_id(self._auth_context, configured_blob_server_id)
+		model_server = self._manager_api.get_resource_by_id(self._auth_context, configured_blob_server_id['result'])
 		model_server_name = model_server['name']
 		print(f'Configured host Blob Server: "{ model_server_name }".')
 
@@ -271,12 +287,14 @@ class Workflow:
 		print(f'\nStartig job to delete {example_root_dir["name"]} recusively.')
 
 		job = self._manager_api.delete_resources_by_id_list(self._auth_context, [example_root_dir['id']])
+		self.wait_for_job_completion(job)
 
+	def wait_for_job_completion(self, job):
 		print(f'Job has been started. Id: {job["id"]}, type: {job["jobType"]}.')
 		print('\nWaiting to job get completed.')
 		while job['status'] != 'completed' and job['status'] != 'failed':
 			print(f'Job stauts is {job["status"]}, polling ...')
-			time.sleep(0.1)
+			time.sleep(1)
 			job = self._manager_api.get_job(self._auth_context, job['id'])
 
 		if job['status'] == 'completed':
@@ -284,9 +302,10 @@ class Workflow:
 			print(f'Result code: {job["resultCode"]}')
 			print('Progress:')
 			print(json.dumps(job['progress'], sort_keys=False, indent=4))
+			return job
 		else:
 			assert job['status'] == 'failed'
-			print(f'Job has been falied. Erro code: {job["resultCode"]}, error message: {job["result"]}.')
+			raise BIMcloudManagerError(f'Job has been failed. Id: {job["id"]}, type: {job["jobType"]}.')
 
 	def download_and_delete_file(self, blob):
 		blob_id = blob['id']
@@ -297,17 +316,20 @@ class Workflow:
 
 		def download(blob_server_session_id, blob_server_api):
 			print(f'\nDownloading "{blob_path}".')
-			stream = blob_server_api.get_blob_content(blob_server_session_id, blob_id)
-			first_byte = None
-			last_byte = None
-			size = 0
-			for chunk in stream.iter_content(chunk_size=8192):
-				if chunk:
-					size += len(chunk)
-					if not first_byte:
-						first_byte = chunk[0]
-					last_byte = chunk[-1]
-			print(f'Downloaded {size} bytes. First byte: {first_byte}, last byte: {last_byte}.')
+			response = blob_server_api.get_blob_content(blob_server_session_id, blob_id)
+			try:
+				first_byte = None
+				last_byte = None
+				size = 0
+				for chunk in response.iter_content(chunk_size=8192):
+					if chunk:
+						size += len(chunk)
+						if not first_byte:
+							first_byte = chunk[0]
+						last_byte = chunk[-1]
+				print(f'Downloaded {size} bytes. First byte: {first_byte}, last byte: {last_byte}.')
+			finally:
+				response.close()
 
 		self.run_with_blob_server_session(blob_model_server, download)
 
@@ -446,6 +468,127 @@ class Workflow:
 			else:
 				raise
 		return self._next_revision_for_sync != curr_revision
+
+	def find_a_snapshot_download_import_then_delete(self):
+		projects = self._manager_api.get_resources_by_criterion(
+			self._auth_context,
+			{ '$eq': { 'type': 'project' } },
+			{ 'sort-by': '$loweredPath' }
+		)
+
+		if not projects:
+			print('No projects found, skipping snapshot demo.')
+			return
+
+		print(f'Found {len(projects)} projects, picking the one with snapshots ...')
+
+		for project in projects:
+			project_snapshots = self._manager_api.get_resource_backups_by_criterion(
+				self._auth_context,
+				{
+					'ids': [project['id']],
+					'criterion': {
+						'$and': [
+							{ '$eq': { '$resourceType': 'project' } },
+							{ '$eq': { '$formatId': '_server.backup.format.bimproject' } },
+							{ '$eq': { '$statusId': '_server.backup.status.done' } },
+						]
+					}
+				},
+			)
+
+			if project_snapshots:
+				found_project = project
+				found_snapshot = project_snapshots[0]
+				print(f'Found project "{found_project["name"]}" (id: {found_project["id"]}) with snapshot "{found_snapshot["$name"]}" (id: {found_snapshot["id"]}).')
+				self.download_snapshot_import_then_delete(found_project, found_snapshot)
+				return
+
+		print('No projects with snapshots found, skipping snapshot demo.')
+
+	def download_snapshot_import_then_delete(self, project, snapshot):
+		print(f'Downloading snapshot "{snapshot["$name"]}" of project "{project["name"]}" to "{self._temp_dir}".')
+		os.makedirs(self._temp_dir, exist_ok=True)
+
+		fn = Workflow.to_unique(f'{project["name"]}_{snapshot["$name"]}')
+		file_path = os.path.join(self._temp_dir, f'{fn}.bimproject')
+		response = self._manager_api.download_backup(self._auth_context, snapshot["id"], project["id"])
+		try:
+			# Save the snapshot to a file using streaming:
+			with open(file_path, 'wb') as f:
+				for chunk in response.iter_content(chunk_size=8192):
+					if chunk:  # Filter out keep-alive chunks
+						f.write(chunk)
+
+			print(f'Snapshot saved to "{file_path}".')
+			self.restore_snapshot_then_delete(
+				project['modelServerId'],
+				project['$parentId'],
+				project['name'],
+				file_path=file_path
+			)
+		finally:
+			response.close()
+			os.remove(file_path)
+			print(f'Snapshot file "{file_path}" deleted.')
+
+	def restore_snapshot_then_delete(self, model_server_id, parent_id, project_name, file_path):
+		model_server = self._manager_api.get_resource_by_id(self._auth_context, model_server_id)
+		model_server_url = self.find_working_model_server_url(model_server)
+		parent = self._manager_api.get_resource_by_id(self._auth_context, parent_id)
+		print(f'Restoring snapshot from "{file_path}" to Model Server "{model_server['name']}" (url: {model_server_url}) under parent directory "{parent['name']}".')
+
+		import_urls = self._manager_api.import_project_get_url(self._auth_context, model_server_id, parent_id)
+		import_url = join_url(model_server_url, import_urls['url'])
+		print(f'Uploading file string to import url: {import_url}')
+
+		# File uri is a query string parameter (file-uri) of the import_url string. We should parse the url, ad get the file-uri parameter.
+		parsed_import_url = urlparse(import_url)
+
+		# parsed_import_url.query is a string, we should parse and process it:
+		query_params_dict = {}
+		if parsed_import_url.query:
+			query_params_dict = dict(param.split('=') for param in parsed_import_url.query.split('&'))
+		file_uri = query_params_dict.get('file-uri')
+		assert file_uri, 'File URI not found in import URL.'
+		# decode file_uri from url encoding:
+		file_uri = unquote(file_uri)
+
+
+		with open(file_path, 'rb') as f:
+			# post the file content to the import url:
+			response = requests.post(import_url, data=f, headers={'Content-Type': 'application/octet-stream'})
+			if not response.ok:
+				raise BIMcloudManagerError(f'Failed to upload snapshot file to import url: {response.status_code} - {response.reason}')
+
+		print('File uploaded.')
+		self.import_project_and_delete(model_server_id, parent, file_uri, project_name)
+
+	def import_project_and_delete(self, model_server_id, parent, file_uri, project_name):
+		new_project_name = Workflow.to_unique(project_name)
+		new_project_path = f"{parent['$path']}/{new_project_name}"
+		print(f'Importing project "{new_project_path}" from file uri "{file_uri}".')
+
+		job = self._manager_api.import_project_as_new(
+			self._auth_context,
+			model_server_id,
+			parent['id'],
+			file_uri,
+			new_project_name
+		)
+
+		self.wait_for_job_completion(job)
+
+		imported_project = self._manager_api.get_resource(self._auth_context, by_path=new_project_path)
+
+		print(f'"{imported_project["$path"]}" imported successfully, id: {imported_project["id"]}.')
+
+		self.delete_project(imported_project)
+
+	def delete_project(self, project):
+		print(f'Deleting project "{project['$path']}".')
+		self._manager_api.delete_project(self._auth_context, project['id'])
+		print('Project deleted.')
 
 	@staticmethod
 	def create_blob_server_path(manager_dir_path, file_name):
