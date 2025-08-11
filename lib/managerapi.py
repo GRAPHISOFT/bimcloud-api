@@ -135,6 +135,7 @@ class ManagerApi:
 		result = self.refresh_on_expiration(requests.delete, auth_context, url, params={ 'resource-id': directory_id }, verify=self._safe)
 		return result
 
+	# works for blobs, projects, libraries, resource groups
 	def delete_resources_by_id_list(self, auth_context, ids):
 		url = join_url(self._api_root, 'delete-resources-by-id-list')
 		result = self.refresh_on_expiration(requests.post, auth_context, url, json={ 'ids': ids }, verify=self._safe)
@@ -148,6 +149,10 @@ class ManagerApi:
 		url = join_url(self._api_root, 'delete-project')
 		self.refresh_on_expiration(requests.delete, auth_context, url, params={'resource-id': project_id }, verify=self._safe)
 
+	def delete_library(self, auth_context, project_id):
+		url = join_url(self._api_root, 'delete-library')
+		self.refresh_on_expiration(requests.delete, auth_context, url, params={'resource-id': project_id }, verify=self._safe)
+
 	def update_blob(self, auth_context, blob):
 		url = join_url(self._api_root, 'update-blob')
 		self.refresh_on_expiration(requests.put, auth_context, url, json=blob, verify=self._safe)
@@ -155,6 +160,18 @@ class ManagerApi:
 	def update_blob_parent(self, auth_context, blob_id, body):
 		url = join_url(self._api_root, 'update-blob-parent')
 		self.refresh_on_expiration(requests.post, auth_context, url, params={ 'blob-id': blob_id }, json=body, verify=self._safe)
+
+	def update_resource_group_parent(self, auth_context, resource_group_id, body):
+		url = join_url(self._api_root, 'update-resource-group-parent')
+		self.refresh_on_expiration(requests.post, auth_context, url, params={ 'resource-group-id': resource_group_id }, json=body, verify=self._safe)
+
+	def update_project_parent(self, auth_context, project_id, body):
+		url = join_url(self._api_root, 'update-project-parent')
+		self.refresh_on_expiration(requests.post, auth_context, url, params={ 'project-id': project_id }, json=body, verify=self._safe)
+
+	def update_library_parent(self, auth_context, library_id, body):
+		url = join_url(self._api_root, 'update-library-parent')
+		self.refresh_on_expiration(requests.post, auth_context, url, params={ 'library-id': library_id }, json=body, verify=self._safe)
 
 	def get_blob_changes_for_sync(self, auth_context, path, resource_group_id, from_revision):
 		url = join_url(self._api_root, 'get-blob-changes-for-sync')
@@ -234,6 +251,58 @@ class ManagerApi:
 			'project-name': project_name
 		}
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params=params, verify=self._safe)
+		return result
+
+	def import_library_get_url(self, auth_context,  model_server_id, parent_id):
+		url = join_url(self._api_root, 'import-library-get-url')
+		params = {
+			'model-server-id': model_server_id,
+			'parent-id': parent_id,
+			'url-root': self.manager_url
+		}
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params=params, verify=self._safe)
+		return result
+
+	def import_library_as_new(self, auth_context, model_server_id, parent_id, file_uri, library_name):
+		url = join_url(self._api_root, 'import-library-as-new')
+		params = {
+			'model-server-id': model_server_id,
+			'parent-id': parent_id,
+			'file-uri': file_uri,
+			'project-name': library_name
+		}
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params=params, verify=self._safe)
+		return result
+
+	def export_project(self, auth_context, project_id, include_automatic_backups=True, include_manual_backups=True):
+		url = join_url(self._api_root, 'export-project')
+		params = {
+			'project-id': project_id,
+			'include-automatic-backups': include_automatic_backups,
+			'include-manual-backups': include_manual_backups
+		}
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params=params, verify=self._safe)
+		return result
+
+	def export_library(self, auth_context, library_id, include_automatic_backups=True, include_manual_backups=True):
+		url = join_url(self._api_root, 'export-library')
+		params = {
+			'library-id': library_id,
+			'include-automatic-backups': include_automatic_backups,
+			'include-manual-backups': include_manual_backups
+		}
+		result = self.refresh_on_expiration(requests.get, auth_context, url, params=params, verify=self._safe)
+		return result
+
+	def insert_bimcloudproject(self, auth_context, target_resource_id, id=None):
+		url = join_url(self._api_root, 'insert-bimcloud-project')
+		params = {
+			'target-resource-id': target_resource_id
+		}
+		json = {}
+		if id is not None:
+			json['id'] = id
+		result = self.refresh_on_expiration(requests.post, auth_context, url, params=params, json=json, verify=self._safe)
 		return result
 
 	def refresh_on_expiration(self, req, auth_context, url, responseJson=True, **kwargs):

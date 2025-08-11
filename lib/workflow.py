@@ -51,7 +51,9 @@ class Workflow:
 			self.move_file()
 			self.locate_download_and_delete_files()
 			self.create_directory_tree_and_delete_recursively()
-			self.find_a_snapshot_download_import_then_delete()
+			self.find_a_project_snapshot_download_import_then_delete() # This example explains how to handle projects and libraries. Check the comments.
+			self.find_a_project_export_import_then_delete() # This example explains how to handle projects and libraries. Check the comments.
+			self.create_a_bcp_move_a_project_there_then_move_back() # This example explains how to handle projects, libraries, blobs and folders. Check the comments.
 		finally:
 			self.logout()
 		# WORKFLOW END
@@ -289,24 +291,6 @@ class Workflow:
 		job = self._manager_api.delete_resources_by_id_list(self._auth_context, [example_root_dir['id']])
 		self.wait_for_job_completion(job)
 
-	def wait_for_job_completion(self, job):
-		print(f'Job has been started. Id: {job["id"]}, type: {job["jobType"]}.')
-		print('\nWaiting to job get completed.')
-		while job['status'] != 'completed' and job['status'] != 'failed':
-			print(f'Job stauts is {job["status"]}, polling ...')
-			time.sleep(1)
-			job = self._manager_api.get_job(self._auth_context, job['id'])
-
-		if job['status'] == 'completed':
-			print('Job has been completed successfully.')
-			print(f'Result code: {job["resultCode"]}')
-			print('Progress:')
-			print(json.dumps(job['progress'], sort_keys=False, indent=4))
-			return job
-		else:
-			assert job['status'] == 'failed'
-			raise BIMcloudManagerError(f'Job has been failed. Id: {job["id"]}, type: {job["jobType"]}.')
-
 	def download_and_delete_file(self, blob):
 		blob_id = blob['id']
 		blob_path = blob['$path']
@@ -469,7 +453,8 @@ class Workflow:
 				raise
 		return self._next_revision_for_sync != curr_revision
 
-	def find_a_snapshot_download_import_then_delete(self):
+	def find_a_project_snapshot_download_import_then_delete(self):
+		# find a project somewhere in the BIMcloud that has a snapshot,
 		projects = self._manager_api.get_resources_by_criterion(
 			self._auth_context,
 			{ '$eq': { 'type': 'project' } },
@@ -489,7 +474,7 @@ class Workflow:
 					'ids': [project['id']],
 					'criterion': {
 						'$and': [
-							{ '$eq': { '$resourceType': 'project' } },
+							{ '$eq': { '$resourceType': 'project' } }, # to get library backups, use '$resourceType': 'library'
 							{ '$eq': { '$formatId': '_server.backup.format.bimproject' } },
 							{ '$eq': { '$statusId': '_server.backup.status.done' } },
 						]
@@ -538,7 +523,7 @@ class Workflow:
 		parent = self._manager_api.get_resource_by_id(self._auth_context, parent_id)
 		print(f'Restoring snapshot from "{file_path}" to Model Server "{model_server['name']}" (url: {model_server_url}) under parent directory "{parent['name']}".')
 
-		import_urls = self._manager_api.import_project_get_url(self._auth_context, model_server_id, parent_id)
+		import_urls = self._manager_api.import_project_get_url(self._auth_context, model_server_id, parent_id) # to import library backups, use import_library_get_url
 		import_url = join_url(model_server_url, import_urls['url'])
 		print(f'Uploading file string to import url: {import_url}')
 
@@ -575,7 +560,7 @@ class Workflow:
 			parent['id'],
 			file_uri,
 			new_project_name
-		)
+		) # to import library backups, use import_library_as_new
 
 		self.wait_for_job_completion(job)
 
@@ -587,8 +572,143 @@ class Workflow:
 
 	def delete_project(self, project):
 		print(f'Deleting project "{project['$path']}".')
-		self._manager_api.delete_project(self._auth_context, project['id'])
+		self._manager_api.delete_project(self._auth_context, project['id']) # to delete library backups, use delete_library
 		print('Project deleted.')
+
+	def find_a_project_export_import_then_delete(self):
+		# find a project somewhere in the BIMcloud.
+		projects = self._manager_api.get_resources_by_criterion(
+			self._auth_context,
+			{ '$eq': { 'type': 'project' } },
+			{ 'sort-by': '$loweredPath', 'limit': 1 },
+		)
+
+		if not projects:
+			print('No projects found, skipping snapshot demo.')
+			return
+
+		assert len(projects) == 1
+
+		project = projects[0]
+		print(f'Found project "{project["name"]}" (id: {project["id"]}).')
+
+		self.export_project_then_import_then_delete(project)
+
+	def export_project_then_import_then_delete(self, project):
+		job = self._manager_api.export_project(
+			self._auth_context,
+			project['id'],
+		) # export_library can be used in case of libraries
+
+		job = self.wait_for_job_completion(job)
+		snapshot_url = next((prop['value'] for prop in job['properties'] if prop['name'] == 'absoluteUrl'), None)
+
+		if not snapshot_url:
+			raise KeyError('absoluteUrl not found in job properties')
+
+		print(f'Downloading snapshot "{snapshot_url}" of project "{project["name"]}" to "{self._temp_dir}".')
+		os.makedirs(self._temp_dir, exist_ok=True)
+
+		fn = Workflow.to_unique(f'{project["name"]}_imported')
+		file_path = os.path.join(self._temp_dir, f'{fn}.bimproject')
+		response = requests.get(
+			snapshot_url,
+			False,
+			verify=False, # Disable SSL verification for demo purposes, not recommended in production!
+			stream=True
+		)
+		try:
+			# Save the snapshot to a file using streaming:
+			with open(file_path, 'wb') as f:
+				for chunk in response.iter_content(chunk_size=8192):
+					if chunk:  # Filter out keep-alive chunks
+						f.write(chunk)
+
+			print(f'Snapshot saved to "{file_path}".')
+			self.restore_snapshot_then_delete(
+				project['modelServerId'],
+				project['$parentId'],
+				project['name'],
+				file_path=file_path
+			)
+		finally:
+			response.close()
+			os.remove(file_path)
+			print(f'Snapshot file "{file_path}" deleted.')
+
+	def create_a_bcp_move_a_project_there_then_move_back(self):
+		# Note you can use any type of resource in this example, not just projects (eg. update_library_parent instead of update_project_parent).
+
+		# find a project somewhere in the BIMcloud.
+		projects = self._manager_api.get_resources_by_criterion(
+			self._auth_context,
+			{ '$eq': { 'type': 'project' } },
+			{ 'sort-by': '$loweredPath', 'limit': 1 },
+		)
+
+		if not projects:
+			print('No projects found, skipping snapshot demo.')
+			return
+
+		assert len(projects) == 1
+
+		project = projects[0]
+		print(f'Found project "{project["name"]}" (id: {project["id"]}). Moving under project root.')
+
+		original_parent_id = project['$parentId']
+
+		bcp_name = Workflow.to_unique('DEMO_BCP')
+		bcp_folder = self.get_or_create_dir(bcp_name)
+
+		print(f'BCP folder "{bcp_folder["$path"]}" created. Promoting it to a BCP.')
+
+		self._manager_api.insert_bimcloudproject(self._auth_context, bcp_folder["id"])
+
+		print(f'BCP "{bcp_folder["$path"]}" created. Moving project "{project["name"]}" there.')
+
+		self._manager_api.update_project_parent(
+			self._auth_context,
+			project['id'],
+			{
+				'parentPath': bcp_folder['$path']
+			}
+		)
+
+		print(f'Project "{project["name"]}" moved to BCP "{bcp_folder["$path"]}".')
+		print('Moving project back to previous location.')
+
+		self._manager_api.update_project_parent(
+			self._auth_context,
+			project['id'],
+			{
+				'parentId': original_parent_id
+			}
+		)
+
+		print(f'Project "{project["name"]}" moved back to its original location.')
+
+		print('Deleting BCP folder.')
+		self._manager_api.delete_resource_group(self._auth_context, bcp_folder['id'])
+
+		print(f'BCP folder "{bcp_folder["$path"]}" deleted.')
+
+	def wait_for_job_completion(self, job):
+		print(f'Job has been started. Id: {job["id"]}, type: {job["jobType"]}.')
+		print('\nWaiting to job get completed.')
+		while job['status'] != 'completed' and job['status'] != 'failed':
+			print(f'Job stauts is {job["status"]}, polling ...')
+			time.sleep(1)
+			job = self._manager_api.get_job(self._auth_context, job['id'])
+
+		if job['status'] == 'completed':
+			print('Job has been completed successfully.')
+			print(f'Result code: {job["resultCode"]}')
+			print('Progress:')
+			print(json.dumps(job['progress'], sort_keys=False, indent=4))
+			return job
+		else:
+			assert job['status'] == 'failed'
+			raise BIMcloudManagerError(f'Job has been failed. Id: {job["id"]}, type: {job["jobType"]}.')
 
 	@staticmethod
 	def create_blob_server_path(manager_dir_path, file_name):

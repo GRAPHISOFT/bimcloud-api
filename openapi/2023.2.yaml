@@ -440,6 +440,55 @@ paths:
         503:
           description: 'Server unavailable, retry the request later.'
 
+  /management/client/insert-bimcloud-project:
+    post:
+      tags:
+        - PortalServer
+      description: |
+        Promotes a folder to BIMcloud Project
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: target-resource-id
+          schema:
+            type: string
+          description: The ID of the folder to be promoted to BIMcloud Project.
+          example: 8b4989f6-8c31-12f9-1ae0-75b1da4142fd
+      requestBody:
+        description: Resource group description
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  example: 8b4989f6-8c31-12f9-1ae0-75b1da4142fd
+                  description: The ID of the new BIMcloud Project item. (Optional, if not provided, a new ID will be generated.)
+                  nullable: true
+      responses:
+        200:
+          description: Successful insert-resource-group request
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
   /management/client/delete-resource-group:
     delete:
       tags:
@@ -605,6 +654,189 @@ paths:
                 parentPath:
                   type: string
                   example: Project Root/folder2
+                  nullable: true
+                  description: New parent folder's path.
+                parentId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: New parent folder's id.
+      responses:
+        200:
+          description: Successful update.
+          content:
+            application/json:
+              schema:
+                type: boolean
+                example: true
+                description: Parent has been updated or stayed the same.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/update-project-parent:
+    put:
+      tags:
+        - PortalServer
+      description: |
+        Updates parent of a Project. Baiscally moves it to a different directory.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: project-id
+          schema:
+            type: string
+            format: uuid
+          example: 4D7C7BB1-7AEF-4CD2-9146-0286561D6F85
+          description: The ID of the project to update
+      requestBody:
+        description: Request body. Use one of its properties to modify parent by path or by id.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parentPath:
+                  type: string
+                  example: Project Root/folder2
+                  nullable: true
+                  description: New parent folder's path.
+                parentId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: New parent folder's id.
+      responses:
+        200:
+          description: Successful update.
+          content:
+            application/json:
+              schema:
+                type: boolean
+                example: true
+                description: Parent has been updated or stayed the same.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/update-library-parent:
+    put:
+      tags:
+        - PortalServer
+      description: |
+        Updates parent of a Library. Baiscally moves it to a different directory.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: library-id
+          schema:
+            type: string
+            format: uuid
+          example: 4D7C7BB1-7AEF-4CD2-9146-0286561D6F85
+          description: The ID of the library to update
+      requestBody:
+        description: Request body. Use one of its properties to modify parent by path or by id.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parentPath:
+                  type: string
+                  example: Library Root/folder2
+                  nullable: true
+                  description: New parent folder's path.
+                parentId:
+                  type: string
+                  format: uuid
+                  nullable: true
+                  description: New parent folder's id.
+      responses:
+        200:
+          description: Successful update.
+          content:
+            application/json:
+              schema:
+                type: boolean
+                example: true
+                description: Parent has been updated or stayed the same.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/update-resource-group-parent:
+    put:
+      tags:
+        - PortalServer
+      description: |
+        Updates parent of a Folder Baiscally moves it to a different directory.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: resource-group-id
+          schema:
+            type: string
+            format: uuid
+          example: 4D7C7BB1-7AEF-4CD2-9146-0286561D6F85
+          description: The ID of the resource-group to update
+      requestBody:
+        description: Request body. Use one of its properties to modify parent by path or by id.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parentPath:
+                  type: string
+                  example: Resource-group Root/folder2
                   nullable: true
                   description: New parent folder's path.
                 parentId:
@@ -1071,6 +1303,43 @@ paths:
         503:
           description: 'Server unavailable, retry the request later.'
 
+  /management/client/delete-library:
+    delete:
+      tags:
+        - PortalServer
+      description: |
+        Deletes a library from the resource tree by ID.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: resource-id
+          schema:
+            type: string
+          description: The ID of the library to be deleted.
+          example: 33E36B98-2758-4C17-83E5-69E93B8B87CB
+      responses:
+        200:
+          description: Delete library request was successful.
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
   /management/client/import-project-get-url:
     get:
       tags:
@@ -1161,6 +1430,216 @@ paths:
           schema:
             type: string
             description: The name of the project to create.
+      responses:
+        200:
+          description: Import job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/export-project:
+    get:
+      tags:
+          - PortalServer
+      description: Starts a job that creates the export snapshot.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: project-id
+          schema:
+            type: string
+            description: The ID of the project to export.
+        - in: query
+          name: include-automatic-backups
+          schema:
+            type: boolean
+            description: Whether to include automatic backups in the export.
+        - in: query
+          name: include-manual-backups
+          schema:
+            type: boolean
+            description: Whether to include manual backups in the export.
+      responses:
+        200:
+          description: Snapshot creation job. Snapshot url will be in job's properties under `absoluteUrl` key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/export-library:
+    get:
+      tags:
+          - PortalServer
+      description: Starts a job that creates the export snapshot.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: library-id
+          schema:
+            type: string
+            description: The ID of the library to export.
+        - in: query
+          name: include-automatic-backups
+          schema:
+            type: boolean
+            description: Whether to include automatic backups in the export.
+        - in: query
+          name: include-manual-backups
+          schema:
+            type: boolean
+            description: Whether to include manual backups in the export.
+      responses:
+        200:
+          description: Snapshot creation job. Snapshot url will be in job's properties under `absoluteUrl` key.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Job'
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/import-library-get-url:
+    get:
+      tags:
+          - PortalServer
+      description: Initiates a snapshot upload and returns a URL to upload the snapshot to.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: model-server-id
+          schema:
+            type: string
+            description: The ID of the Model Server to upload the snapshot to.
+        - in: query
+          name: parent-id
+          schema:
+            type: string
+            description: Parent folder ID to upload the snapshot token.
+        - in: query
+          name: url-root
+          schema:
+            type: string
+            description: The URL root of the BIMcloud Manager
+            example: http://localhost:22000
+      responses:
+        200:
+          description: Urls.
+          content:
+            application/json:
+              schema:
+                properties:
+                  url:
+                    type: string
+                    description: The relative Model Server URL to upload the snapshot to.
+                    example: /upload?par1=value1
+                  absoluteUrl:
+                    type: string
+                    description: The absolute Model Server URL to upload the snapshot to.
+                    example: http://localhost:22001/upload?par1=value1
+        401:
+          description: '`invalid_token` error may be thrown if the provided access token has expired or otherwise invalid'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OauthError'
+        430:
+          description: 'Request errors'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PortalServerError'
+        503:
+          description: 'Server unavailable, retry the request later.'
+
+  /management/client/import-library-as-new:
+    post:
+      tags:
+          - PortalServer
+      description: Put the uploaded snapshot to resource tree as a new library.
+      parameters:
+        - in: header
+          name: Authorization
+          schema:
+            type: string
+            example: Bearer <access_token>
+          description: OAuth bearer token
+        - in: query
+          name: model-server-id
+          schema:
+            type: string
+            description: The ID of the Model Server to upload the snapshot to.
+        - in: query
+          name: file-uri
+          schema:
+            type: string
+            description: Uploaded snapshot file url.
+        - in: query
+          name: parent-id
+          schema:
+            type: string
+            description: Parent folder ID to upload the snapshot token.
+        - in: query
+          name: library-name
+          schema:
+            type: string
+            description: The name of the library to create.
       responses:
         200:
           description: Import job
@@ -2294,7 +2773,7 @@ components:
           example: 'EntityNotFoundError: No item found by "projectRootz"'
           description: Details about why the error has occured
 
-# OAUTH SPECIFIC
+    # OAUTH SPECIFIC
     OauthError:
       type: object
       properties:
