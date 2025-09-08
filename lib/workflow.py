@@ -286,7 +286,7 @@ class Workflow:
 		# The API is asynchronous which means the directory won't get deleted as soon as the API call get finished.
 		# The result of the API is a job that we can poll to get result of the ongoing delete operation.
 
-		print(f'\nStartig job to delete {example_root_dir["name"]} recusively.')
+		print(f'\nStarting job to delete {example_root_dir["name"]} recursively.')
 
 		job = self._manager_api.delete_resources_by_id_list(self._auth_context, [example_root_dir['id']])
 		self.wait_for_job_completion(job)
@@ -521,7 +521,7 @@ class Workflow:
 		model_server = self._manager_api.get_resource_by_id(self._auth_context, model_server_id)
 		model_server_url = self.find_working_model_server_url(model_server)
 		parent = self._manager_api.get_resource_by_id(self._auth_context, parent_id)
-		print(f'Restoring snapshot from "{file_path}" to Model Server "{model_server['name']}" (url: {model_server_url}) under parent directory "{parent['name']}".')
+		print(f'Restoring snapshot from "{file_path}" to Model Server "{model_server["name"]}" (url: {model_server_url}) under parent directory "{parent["name"]}".')
 
 		import_urls = self._manager_api.import_project_get_url(self._auth_context, model_server_id, parent_id) # to import library backups, use import_library_get_url
 		import_url = join_url(model_server_url, import_urls['url'])
@@ -571,7 +571,7 @@ class Workflow:
 		self.delete_project(imported_project)
 
 	def delete_project(self, project):
-		print(f'Deleting project "{project['$path']}".')
+		print(f'Deleting project "{project["$path"]}".')
 		self._manager_api.delete_project(self._auth_context, project['id']) # to delete library backups, use delete_library
 		print('Project deleted.')
 
