@@ -306,7 +306,7 @@ class ManagerApi:
 		if id is not None:
 			json['id'] = id
 		else:
-			json = str(uuid.uuid4())  # generate a guid string
+			json['id'] = str(uuid.uuid4())  # generate a guid string
 		result = self.refresh_on_expiration(requests.post, auth_context, url, params=params, json=json, verify=self._safe)
 		return result
 
