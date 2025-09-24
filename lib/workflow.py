@@ -457,7 +457,7 @@ class Workflow:
 		# find a project somewhere in the BIMcloud that has a snapshot,
 		projects = self._manager_api.get_resources_by_criterion(
 			self._auth_context,
-			{ '$eq': { 'type': 'project' } },
+			{ '$and': [ { '$eq': { 'type': 'project' } }, { '$eq': { '$syncStatus': 'sync' } } ]},
 			{ 'sort-by': '$loweredPath' }
 		)
 
@@ -579,7 +579,7 @@ class Workflow:
 		# find a project somewhere in the BIMcloud.
 		projects = self._manager_api.get_resources_by_criterion(
 			self._auth_context,
-			{ '$eq': { 'type': 'project' } },
+			{ '$and': [ { '$eq': { 'type': 'project' } }, { '$eq': { '$syncStatus': 'sync' } } ]},
 			{ 'sort-by': '$loweredPath', 'limit': 1 },
 		)
 
@@ -642,7 +642,7 @@ class Workflow:
 		# find a project somewhere in the BIMcloud.
 		projects = self._manager_api.get_resources_by_criterion(
 			self._auth_context,
-			{ '$eq': { 'type': 'project' } },
+			{ '$and': [ { '$eq': { 'type': 'project' } }, { '$eq': { '$syncStatus': 'sync' } } ]},
 			{ 'sort-by': '$loweredPath', 'limit': 1 },
 		)
 
