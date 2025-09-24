@@ -75,6 +75,9 @@ class BIMcloudError(Exception):
 		self.name = id
 		self.message = message
 
+	def __str__(self):
+		return f'{self.name} ({self.code}): {self.message}'
+
 class BIMcloudManagerError(BIMcloudError): pass
 
 class BIMcloudBlobServerError(BIMcloudError): pass
