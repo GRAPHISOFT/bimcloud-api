@@ -289,6 +289,7 @@ class ManagerApi:
 		url = join_url(self._api_root, 'export-library')
 		params = {
 			'library-id': library_id,
+			'url-root': self.manager_url,
 			'include-automatic-backups': include_automatic_backups,
 			'include-manual-backups': include_manual_backups
 		}
