@@ -1470,6 +1470,13 @@ paths:
             type: string
             description: The ID of the project to export.
         - in: query
+          name: url-root
+          schema:
+            type: string
+            description: The URL root of the BIMcloud Manager
+            example: http://localhost:22000
+          required: false
+        - in: query
           name: include-automatic-backups
           schema:
             type: boolean
@@ -1518,6 +1525,13 @@ paths:
           schema:
             type: string
             description: The ID of the library to export.
+        - in: query
+          name: url-root
+          schema:
+            type: string
+            description: The URL root of the BIMcloud Manager
+            example: http://localhost:22000
+          required: false
         - in: query
           name: include-automatic-backups
           schema:

@@ -278,6 +278,7 @@ class ManagerApi:
 		url = join_url(self._api_root, 'export-project')
 		params = {
 			'project-id': project_id,
+			'url-root': self.manager_url,
 			'include-automatic-backups': include_automatic_backups,
 			'include-manual-backups': include_manual_backups
 		}
