@@ -469,7 +469,7 @@ paths:
                 id:
                   type: string
                   example: 8b4989f6-8c31-12f9-1ae0-75b1da4142fd
-                  description: The ID of the new BIMcloud Project item. (Optional, if not provided, a new ID will be generated.)
+                  description: The ID of the new BIMcloud Project item.
                   nullable: true
       responses:
         200:
