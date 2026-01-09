@@ -124,7 +124,7 @@ class Workflow:
 		configured_blob_server_id = \
 			self._manager_api.get_inherited_default_blob_server_id(
 				self._auth_context,
-				immediate_parent_dir['id'])
+				immediate_parent_dir['id'])["result"]
 
 		# Blob Server is a role of a Model Server, basically they are the same thing:
 		model_server = self._manager_api.get_resource_by_id(self._auth_context, configured_blob_server_id)
